@@ -11,6 +11,8 @@ interface Product {
   stock: number;
   proveedor: string;
   precio_publico: number;
+  url_imagen?: string | null;
+  descripcion?: string | null;
 }
 
 const Index = () => {
@@ -21,7 +23,7 @@ const Index = () => {
   const [marca, setMarca] = useState('');
 
   useEffect(() => {
-    supabase.from('vista_catalogo_vigente').select('id, nombre, marca, categoria, stock, proveedor, precio_publico')
+    supabase.from('vista_catalogo_vigente').select('id, nombre, marca, categoria, stock, proveedor, precio_publico, url_imagen, descripcion')
       .then(({ data }) => {
         setProducts((data as Product[]) || []);
         setLoading(false);
