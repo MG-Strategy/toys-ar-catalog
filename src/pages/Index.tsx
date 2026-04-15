@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 
+// dbValue = exact Supabase categoria value, label = display name
 const categories = [
-  { name: 'Vehículos', image: '/categorias/vehiculos.jpg' },
-  { name: 'Peluches', emoji: '🧸', gradient: 'linear-gradient(135deg, #E91E63, #F48FB1)' },
-  { name: 'Muñecas', image: '/categorias/munecas.jpg' },
-  { name: 'Juegos de Mesa', emoji: '🎲', gradient: 'linear-gradient(135deg, #2E7D32, #81C784)' },
-  { name: 'Muñecos', emoji: '🤖', gradient: 'linear-gradient(135deg, #E65100, #FFB74D)' },
-  { name: 'Bebés', image: '/categorias/bebes.jpg' },
+  { dbValue: 'Vehiculos', label: 'Vehículos', image: '/categorias/vehiculos.jpg' },
+  { dbValue: 'Peluches', label: 'Peluches', emoji: '🧸', gradient: 'linear-gradient(135deg, #E91E63, #F48FB1)' },
+  { dbValue: 'Muñecas', label: 'Muñecas', image: '/categorias/munecas.jpg' },
+  { dbValue: 'Juegos de Mesa', label: 'Juegos de Mesa', emoji: '🎲', gradient: 'linear-gradient(135deg, #2E7D32, #81C784)' },
+  { dbValue: 'Muñecos', label: 'Muñecos', emoji: '🤖', gradient: 'linear-gradient(135deg, #E65100, #FFB74D)' },
+  { dbValue: 'bebes', label: 'Bebés', image: '/categorias/bebes.jpg' },
 ];
 
 const features = [
@@ -71,22 +72,22 @@ const Index = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {categories.map(cat => (
             <button
-              key={cat.name}
-              onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(cat.name)}`)}
+              key={cat.dbValue}
+              onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(cat.dbValue)}`)}
               className="rounded-2xl overflow-hidden flex flex-col items-center hover:scale-105 transition-transform shadow-lg cursor-pointer text-white relative h-48"
               style={cat.gradient ? { background: cat.gradient } : undefined}
             >
               {cat.image ? (
                 <>
-                  <img src={cat.image} alt={cat.name} className="w-full h-full object-contain p-2" />
+                  <img src={cat.image} alt={cat.label} className="w-full h-full object-contain p-2" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                    <span className="font-bold text-base">{cat.name}</span>
+                    <span className="font-bold text-base">{cat.label}</span>
                   </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full w-full p-8 gap-3">
                   <span style={{ fontSize: '5rem', lineHeight: 1 }}>{cat.emoji}</span>
-                  <span className="font-bold text-lg">{cat.name}</span>
+                  <span className="font-bold text-lg">{cat.label}</span>
                 </div>
               )}
             </button>

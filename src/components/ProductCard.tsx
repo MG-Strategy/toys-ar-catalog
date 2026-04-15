@@ -1,5 +1,6 @@
 import { useCart } from '@/contexts/CartContext';
 import { getCategoryColor } from '@/lib/categoryColors';
+import { getDisplayName } from '@/lib/categoryLabels';
 import { Plus, Minus, Image } from 'lucide-react';
 
 interface Product {
@@ -15,11 +16,17 @@ interface Product {
 }
 
 const categoryBorderColors: Record<string, string> = {
-  'Vehículos': '#1565C0',
+  'Vehiculos': '#1565C0',
   'Peluches': '#E91E63',
   'Muñecas': '#7B1FA2',
   'Juegos de Mesa': '#2E7D32',
   'Muñecos': '#E65100',
+  'bebes': '#F06292',
+  'exterior': '#43A047',
+  'manualidades': '#FF7043',
+  'electronicos': '#5C6BC0',
+  'juguetes_educativos': '#26A69A',
+  'otros': '#78909C',
 };
 
 const ProductCard = ({ product }: { product: Product }) => {
@@ -63,7 +70,7 @@ const ProductCard = ({ product }: { product: Product }) => {
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-bold text-lg text-card-foreground capitalize leading-tight">{product.nombre}</h3>
           <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full ${getCategoryColor(product.categoria)}`}>
-            {product.categoria}
+            {getDisplayName(product.categoria)}
           </span>
         </div>
         {product.descripcion && (
