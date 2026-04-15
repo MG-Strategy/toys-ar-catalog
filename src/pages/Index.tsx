@@ -72,6 +72,11 @@ const Index = () => {
                 src={cat.image}
                 alt={cat.label || getDisplayName(cat.dbValue)}
                 className="w-full h-full object-cover transition-all duration-300 group-hover:brightness-110"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  target.parentElement!.style.backgroundColor = '#1565C0';
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <span className="absolute bottom-3 left-3 right-3 text-white font-bold text-sm md:text-base drop-shadow-lg">
