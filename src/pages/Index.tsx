@@ -66,9 +66,9 @@ const Index = () => {
             >
               {cat.image ? (
                 <>
-                  <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                    <span className="font-bold text-lg">{cat.name}</span>
+                  <img src={cat.image} alt={cat.name} className="w-full h-full object-contain p-2" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <span className="font-bold text-base">{cat.name}</span>
                   </div>
                 </>
               ) : (
