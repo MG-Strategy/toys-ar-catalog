@@ -34,7 +34,7 @@ const Cotizar = () => {
       } else {
         const { data: newUser, error: userErr } = await supabase
           .from('usuarios')
-          .insert({ nombre_completo: form.nombre_completo, email: form.email, telefono: form.telefono || null, fecha_registro: new Date().toISOString() })
+          .insert({ nombre_completo: form.nombre_completo, email: form.email, telefono: form.telefono || null })
           .select('id')
           .single();
         if (userErr) throw userErr;
