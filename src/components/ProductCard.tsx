@@ -1,6 +1,6 @@
 import { useCart } from '@/contexts/CartContext';
 import { getCategoryColor } from '@/lib/categoryColors';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Image } from 'lucide-react';
 
 interface Product {
   id: number;
