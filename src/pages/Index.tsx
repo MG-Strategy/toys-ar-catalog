@@ -2,19 +2,19 @@ import { useNavigate } from 'react-router-dom';
 import { getDisplayName } from '@/lib/categoryLabels';
 
 const categories = [
-  { dbValue: 'Vehiculos', image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=400' },
-  { dbValue: 'Peluches', image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=400' },
-  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1561702771-4e776234b627?w=400' },
-  { dbValue: 'Muñecos', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400' },
-  { dbValue: 'Juegos de Mesa', image: 'https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=400' },
-  { dbValue: 'juguetes_educativos', image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400' },
-  { dbValue: 'bebes_ALL', label: 'Bebés', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400' },
-  { dbValue: 'exterior', image: 'https://images.unsplash.com/photo-1575783970733-1aaedde1db74?w=400' },
-  { dbValue: 'manualidades', image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400' },
-  { dbValue: 'electronicos', image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=400' },
-  { dbValue: 'Accion', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400' },
-  { dbValue: 'Didacticos', image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=400' },
-  { dbValue: 'otros', image: 'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=400' },
+  { dbValue: 'Vehiculos', image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=400&q=80' },
+  { dbValue: 'Peluches', image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=400&q=80' },
+  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=400&q=80' },
+  { dbValue: 'Muñecos', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400&q=80' },
+  { dbValue: 'Juegos de Mesa', image: 'https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=400&q=80' },
+  { dbValue: 'juguetes_educativos', image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&q=80' },
+  { dbValue: 'bebes_ALL', label: 'Bebés', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&q=80' },
+  { dbValue: 'exterior', image: 'https://images.unsplash.com/photo-1575783970733-1aaedde1db74?w=400&q=80' },
+  { dbValue: 'manualidades', image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&q=80' },
+  { dbValue: 'electronicos', image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=400&q=80' },
+  { dbValue: 'Accion', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400&q=80' },
+  { dbValue: 'Didacticos', image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=400&q=80' },
+  { dbValue: 'otros', image: 'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=400&q=80' },
 ];
 
 const features = [
@@ -29,20 +29,8 @@ const Index = () => {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section
-        className="relative overflow-hidden py-20 md:py-28"
-        style={{ background: '#F8F9FA' }}
-      >
-        {/* Floating decorative elements */}
-        <div className="absolute top-10 left-10 w-16 h-16 rounded-full animate-bounce" style={{ animationDuration: '3s', backgroundColor: 'rgba(21,101,192,0.15)' }} />
-        <div className="absolute top-32 right-20 w-10 h-10 rounded-full animate-bounce" style={{ animationDuration: '4s', backgroundColor: 'rgba(255,214,0,0.25)' }} />
-        <div className="absolute bottom-16 left-1/4 w-12 h-12 rotate-45 animate-bounce" style={{ animationDuration: '3.5s', backgroundColor: 'rgba(21,101,192,0.12)' }} />
-        <div className="absolute top-20 right-1/3 w-8 h-8 rounded-full animate-bounce" style={{ animationDuration: '2.5s', backgroundColor: 'rgba(255,214,0,0.2)' }} />
-        <div className="absolute bottom-10 right-10 text-5xl animate-bounce" style={{ animationDuration: '2s' }}>⭐</div>
-
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <div className="text-6xl mb-4">🎈</div>
-
+      <section className="py-20 md:py-28 bg-white">
+        <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight" style={{ color: '#1a1a2e' }}>
             ¡Cotizá tus juguetes{' '}
             <span style={{ color: '#1565C0' }}>favoritos</span>{' '}
