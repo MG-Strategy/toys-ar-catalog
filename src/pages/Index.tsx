@@ -1,103 +1,102 @@
-import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import ProductCard from '@/components/ProductCard';
-import { Search, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-interface Product {
-  id: number;
-  nombre: string;
-  marca: string;
-  categoria: string;
-  stock: number;
-  proveedor: string;
-  precio_publico: number;
-  url_imagen?: string | null;
-  descripcion?: string | null;
-}
+const categories = [
+  { emoji: '🚗', name: 'Vehículos', color: 'bg-blue-100' },
+  { emoji: '🧸', name: 'Peluches', color: 'bg-pink-100' },
+  { emoji: '👧', name: 'Muñecas', color: 'bg-purple-100' },
+  { emoji: '🎲', name: 'Juegos de Mesa', color: 'bg-green-100' },
+  { emoji: '🤖', name: 'Muñecos', color: 'bg-orange-100' },
+];
+
+const features = [
+  { emoji: '⚡', title: 'Precios en tiempo real', desc: 'Nuestros precios se actualizan automáticamente desde nuestros proveedores' },
+  { emoji: '📋', title: 'Cotización instantánea', desc: 'Seleccioná los productos y recibí tu presupuesto en segundos' },
+  { emoji: '🏪', title: 'Amplio catálogo', desc: 'Más de 68 productos de las mejores marcas' },
+];
 
 const Index = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [marca, setMarca] = useState('');
-
-  useEffect(() => {
-    supabase.from('vista_catalogo_vigente').select('id, nombre, marca, categoria, stock, proveedor, precio_publico, url_imagen, descripcion')
-      .then(({ data }) => {
-        setProducts((data as Product[]) || []);
-        setLoading(false);
-      });
-  }, []);
-
-  const categorias = useMemo(() => [...new Set(products.map(p => p.categoria).filter(Boolean))].sort(), [products]);
-  const marcas = useMemo(() => [...new Set(products.map(p => p.marca).filter(Boolean))].sort(), [products]);
-
-  const filtered = useMemo(() => {
-    return products.filter(p => {
-      if (search && !p.nombre.toLowerCase().includes(search.toLowerCase())) return false;
-      if (categoria && p.categoria !== categoria) return false;
-      if (marca && p.marca !== marca) return false;
-      return true;
-    });
-  }, [products, search, categoria, marca]);
-
-  const clearFilters = () => { setSearch(''); setCategoria(''); setMarca(''); };
-  const hasFilters = search || categoria || marca;
+  const navigate = useNavigate();
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Filters */}
-      <div className="bg-card rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar producto..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <select value={categoria} onChange={e => setCategoria(e.target.value)} className="px-3 py-2 rounded-md border border-input bg-background text-sm min-w-[150px]">
-          <option value="">Todas las categorías</option>
-          {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={marca} onChange={e => setMarca(e.target.value)} className="px-3 py-2 rounded-md border border-input bg-background text-sm min-w-[150px]">
-          <option value="">Todas las marcas</option>
-          {marcas.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-        {hasFilters && (
-          <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold hover:opacity-90">
-            <X className="w-4 h-4" /> Limpiar filtros
-          </button>
-        )}
-        <span className="text-sm text-muted-foreground font-semibold ml-auto">{filtered.length} productos encontrados</span>
-      </div>
+    <div className="flex flex-col">
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-secondary/30 via-secondary/10 to-background py-20 md:py-28">
+        {/* Floating shapes */}
+        <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-toy-yellow/30 animate-bounce" style={{ animationDuration: '3s' }} />
+        <div className="absolute top-32 right-20 w-10 h-10 rounded-full bg-toy-blue/20 animate-bounce" style={{ animationDuration: '4s' }} />
+        <div className="absolute bottom-16 left-1/4 w-12 h-12 rotate-45 bg-toy-red/15 animate-bounce" style={{ animationDuration: '3.5s' }} />
+        <div className="absolute top-20 right-1/3 w-8 h-8 bg-toy-green/20 rounded-full animate-bounce" style={{ animationDuration: '2.5s' }} />
+        <div className="absolute bottom-10 right-10 text-5xl animate-bounce" style={{ animationDuration: '2s' }}>⭐</div>
+        <div className="absolute top-10 right-10 text-4xl animate-bounce" style={{ animationDuration: '3s' }}>🎈</div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-card rounded-lg shadow overflow-hidden animate-pulse">
-              <div className="aspect-square bg-muted" />
-              <div className="p-5 space-y-3">
-                <div className="h-5 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-                <div className="h-4 bg-muted rounded w-1/4" />
-              </div>
-            </div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-4 leading-tight">
+            Los mejores juguetes,<br />al mejor precio
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8">
+            Cotizá en segundos, recibí tu presupuesto al instante
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => navigate('/catalogo')}
+              className="px-8 py-4 rounded-lg bg-primary text-primary-foreground font-bold text-lg hover:opacity-90 transition-opacity shadow-lg"
+            >
+              🧸 Ver catálogo
+            </button>
+            <button
+              onClick={() => navigate('/cotizar')}
+              className="px-8 py-4 rounded-lg bg-card text-foreground font-bold text-lg border-2 border-primary hover:bg-primary/10 transition-colors shadow-lg"
+            >
+              💬 Pedir cotización
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="container mx-auto px-4 py-16">
+        <h2 className="text-3xl font-extrabold text-center text-foreground mb-10">Explorá por categoría</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          {categories.map(cat => (
+            <button
+              key={cat.name}
+              onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(cat.name)}`)}
+              className={`${cat.color} rounded-lg p-8 flex flex-col items-center gap-3 hover:scale-105 transition-transform shadow-md cursor-pointer`}
+            >
+              <span className="text-5xl">{cat.emoji}</span>
+              <span className="font-bold text-foreground text-lg">{cat.name}</span>
+            </button>
           ))}
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground text-lg">
-          No encontramos productos con esos filtros 🧸
+      </section>
+
+      {/* Why Us */}
+      <section className="bg-muted/50 py-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-extrabold text-center text-foreground mb-10">¿Por qué JugueteAR?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {features.map(f => (
+              <div key={f.title} className="bg-card rounded-lg p-8 text-center shadow-md">
+                <span className="text-4xl mb-4 block">{f.emoji}</span>
+                <h3 className="font-bold text-lg text-foreground mb-2">{f.title}</h3>
+                <p className="text-sm text-muted-foreground">{f.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-foreground text-background py-8">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-sm mb-3">© 2026 JugueteAR — Todos los derechos reservados</p>
+          <div className="flex items-center justify-center gap-4 text-sm">
+            <button onClick={() => navigate('/catalogo')} className="hover:underline">Catálogo</button>
+            <span>|</span>
+            <button onClick={() => navigate('/cotizar')} className="hover:underline">Cotizar</button>
+          </div>
         </div>
-      )}
+      </footer>
     </div>
   );
 };

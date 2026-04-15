@@ -4,7 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
 import Header from "@/components/Header";
+import FloatingChatButton from "@/components/FloatingChatButton";
 import Index from "./pages/Index";
+import Catalogo from "./pages/Catalogo";
 import Cotizar from "./pages/Cotizar";
 import NotFound from "./pages/NotFound";
 
@@ -19,9 +21,11 @@ const App = () => (
           <Header />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/catalogo" element={<Catalogo />} />
             <Route path="/cotizar" element={<Cotizar />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <FloatingChatButton />
         </BrowserRouter>
       </CartProvider>
     </TooltipProvider>
