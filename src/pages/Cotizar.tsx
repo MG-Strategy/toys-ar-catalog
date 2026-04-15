@@ -34,7 +34,11 @@ const Cotizar = () => {
       } else {
         const { data: newUser, error: userErr } = await supabase
           .from('usuarios')
-          .insert({ nombre_completo: form.nombre_completo, email: form.email, telefono: form.telefono || null })
+          .insert({
+            nombre_completo: form.nombre_completo,
+            email: form.email,
+            telefono: form.telefono || null,
+          })
           .select('id')
           .single();
         if (userErr) throw userErr;
@@ -44,17 +48,26 @@ const Cotizar = () => {
       // 2. Create quote
       const { data: quote, error: quoteErr } = await supabase
         .from('cotizaciones_globales')
-        .insert({ id_usuario: userId, canal: 'web', estado: 'pendiente', total: totalPrice, fecha_cotizacion: new Date().toISOString() })
+        .insert({
+          id_usuario: userId,
+          fecha_cotizacion: new Date().toISOString(),
+          estado: 'pendiente',
+          total: totalPrice,
+          canal: 'web',
+          notas: null,
+        })
         .select('id')
         .single();
       if (quoteErr) throw quoteErr;
 
       // 3. Insert items
       const quoteItems = items.map(i => ({
-        id_cotizacion: quote.id,
+        id_cotizacion_global: quote.id,
+        id_usuario: userId,
+        fecha_cotizacion: new Date().toISOString(),
         id_producto: i.id,
-        cantidad: i.cantidad,
-        precio_unitario: i.precio_publico,
+        cantidad_productos: i.cantidad,
+        precio_publico: i.precio_publico,
         subtotal: i.cantidad * i.precio_publico,
       }));
       const { error: itemsErr } = await supabase.from('cotizacion_productos').insert(quoteItems);
@@ -75,7 +88,7 @@ const Cotizar = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
-      <button onClick={() => navigate('/')} className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline mb-4">
+      <button onClick={() => navigate('/catalogo')} className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline mb-4">
         <ArrowLeft className="w-4 h-4" /> Volver al catálogo
       </button>
 
@@ -84,11 +97,10 @@ const Cotizar = () => {
       {items.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-lg">El carrito está vacío 🛒</p>
-          <button onClick={() => navigate('/')} className="mt-4 px-4 py-2 rounded-md bg-primary text-primary-foreground font-semibold text-sm">Ver catálogo</button>
+          <button onClick={() => navigate('/catalogo')} className="mt-4 px-4 py-2 rounded-md bg-primary text-primary-foreground font-semibold text-sm">Ver catálogo</button>
         </div>
       ) : (
         <>
-          {/* Cart table */}
           <div className="bg-card rounded-lg shadow overflow-x-auto mb-6">
             <table className="w-full text-sm">
               <thead>
@@ -130,7 +142,6 @@ const Cotizar = () => {
             </div>
           </div>
 
-          {/* Client form */}
           <form onSubmit={handleSubmit} className="bg-card rounded-lg shadow p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground">Datos de contacto</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

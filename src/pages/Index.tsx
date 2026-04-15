@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 
 const categories = [
-  { emoji: '🚗', name: 'Vehículos', color: 'bg-blue-100' },
-  { emoji: '🧸', name: 'Peluches', color: 'bg-pink-100' },
-  { emoji: '👧', name: 'Muñecas', color: 'bg-purple-100' },
-  { emoji: '🎲', name: 'Juegos de Mesa', color: 'bg-green-100' },
-  { emoji: '🤖', name: 'Muñecos', color: 'bg-orange-100' },
+  { emoji: '🚗', name: 'Vehículos', gradient: 'linear-gradient(135deg, #1565C0, #42A5F5)' },
+  { emoji: '🧸', name: 'Peluches', gradient: 'linear-gradient(135deg, #E91E63, #F48FB1)' },
+  { emoji: '👧', name: 'Muñecas', gradient: 'linear-gradient(135deg, #7B1FA2, #CE93D8)' },
+  { emoji: '🎲', name: 'Juegos de Mesa', gradient: 'linear-gradient(135deg, #2E7D32, #81C784)' },
+  { emoji: '🤖', name: 'Muñecos', gradient: 'linear-gradient(135deg, #E65100, #FFB74D)' },
 ];
 
 const features = [
@@ -21,11 +21,10 @@ const Index = () => {
     <div className="flex flex-col">
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-secondary/30 via-secondary/10 to-background py-20 md:py-28">
-        {/* Floating shapes */}
-        <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-toy-yellow/30 animate-bounce" style={{ animationDuration: '3s' }} />
-        <div className="absolute top-32 right-20 w-10 h-10 rounded-full bg-toy-blue/20 animate-bounce" style={{ animationDuration: '4s' }} />
-        <div className="absolute bottom-16 left-1/4 w-12 h-12 rotate-45 bg-toy-red/15 animate-bounce" style={{ animationDuration: '3.5s' }} />
-        <div className="absolute top-20 right-1/3 w-8 h-8 bg-toy-green/20 rounded-full animate-bounce" style={{ animationDuration: '2.5s' }} />
+        <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-secondary/30 animate-bounce" style={{ animationDuration: '3s' }} />
+        <div className="absolute top-32 right-20 w-10 h-10 rounded-full bg-primary/20 animate-bounce" style={{ animationDuration: '4s' }} />
+        <div className="absolute bottom-16 left-1/4 w-12 h-12 rotate-45 bg-accent/15 animate-bounce" style={{ animationDuration: '3.5s' }} />
+        <div className="absolute top-20 right-1/3 w-8 h-8 bg-primary/20 rounded-full animate-bounce" style={{ animationDuration: '2.5s' }} />
         <div className="absolute bottom-10 right-10 text-5xl animate-bounce" style={{ animationDuration: '2s' }}>⭐</div>
         <div className="absolute top-10 right-10 text-4xl animate-bounce" style={{ animationDuration: '3s' }}>🎈</div>
 
@@ -61,10 +60,11 @@ const Index = () => {
             <button
               key={cat.name}
               onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(cat.name)}`)}
-              className={`${cat.color} rounded-lg p-8 flex flex-col items-center gap-3 hover:scale-105 transition-transform shadow-md cursor-pointer`}
+              className="rounded-2xl p-8 flex flex-col items-center gap-3 hover:scale-105 transition-transform shadow-lg cursor-pointer text-white"
+              style={{ background: cat.gradient }}
             >
-              <span className="text-5xl">{cat.emoji}</span>
-              <span className="font-bold text-foreground text-lg">{cat.name}</span>
+              <span style={{ fontSize: '5rem', lineHeight: 1 }}>{cat.emoji}</span>
+              <span className="font-bold text-lg">{cat.name}</span>
             </button>
           ))}
         </div>
