@@ -4,7 +4,7 @@ import { getDisplayName } from '@/lib/categoryLabels';
 const categories = [
   { dbValue: 'Vehiculos', image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=400&q=80' },
   { dbValue: 'Peluches', image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=400&q=80' },
-  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=400&q=80' },
+  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1602734846297-9299fc2d4703?w=400&q=80', fallbackColor: '#F48FB1', fallbackEmoji: '👧' },
   { dbValue: 'Muñecos', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400&q=80' },
   { dbValue: 'Juegos de Mesa', image: 'https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=400&q=80' },
   { dbValue: 'juguetes_educativos', image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&q=80' },
@@ -86,7 +86,15 @@ const Index = () => {
                 onError={(e) => {
                   const target = e.currentTarget;
                   target.style.display = 'none';
-                  target.parentElement!.style.backgroundColor = '#1565C0';
+                  const parent = target.parentElement!;
+                  parent.style.backgroundColor = (cat as any).fallbackColor || '#1565C0';
+                  if ((cat as any).fallbackEmoji) {
+                    const emojiEl = document.createElement('span');
+                    emojiEl.textContent = (cat as any).fallbackEmoji;
+                    emojiEl.className = 'absolute inset-0 flex items-center justify-center text-6xl';
+                    emojiEl.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3.5rem;';
+                    parent.appendChild(emojiEl);
+                  }
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
