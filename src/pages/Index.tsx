@@ -77,27 +77,22 @@ const Index = () => {
       {/* Categories */}
       <section className="container mx-auto px-4 py-16">
         <h2 className="text-3xl font-extrabold text-center text-foreground mb-10">Explorá por categoría</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
           {categories.map(cat => (
             <button
               key={cat.dbValue}
               onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(cat.dbValue)}`)}
-              className="rounded-2xl overflow-hidden flex flex-col items-center hover:scale-105 transition-transform shadow-lg cursor-pointer text-white relative h-48"
-              style={cat.gradient ? { background: cat.gradient } : undefined}
+              className="rounded-2xl overflow-hidden relative h-[200px] shadow-lg cursor-pointer group transition-transform duration-300 hover:scale-105"
             >
-              {cat.image ? (
-                <>
-                  <img src={cat.image} alt={cat.label} className="w-full h-full object-contain p-2" />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                    <span className="font-bold text-base">{cat.label}</span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full w-full p-8 gap-3">
-                  <span style={{ fontSize: '5rem', lineHeight: 1 }}>{cat.emoji}</span>
-                  <span className="font-bold text-lg">{cat.label}</span>
-                </div>
-              )}
+              <img
+                src={cat.image}
+                alt={getDisplayName(cat.dbValue)}
+                className="w-full h-full object-cover transition-all duration-300 group-hover:brightness-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <span className="absolute bottom-3 left-3 right-3 text-white font-bold text-sm md:text-base drop-shadow-lg">
+                {getDisplayName(cat.dbValue)}
+              </span>
             </button>
           ))}
         </div>
