@@ -39,7 +39,11 @@ const Catalogo = () => {
   const filtered = useMemo(() => {
     return products.filter(p => {
       if (search && !p.nombre.toLowerCase().includes(search.toLowerCase())) return false;
-      if (categoria && p.categoria !== categoria) return false;
+      if (categoria) {
+        if (categoria === 'bebes_ALL') {
+          if (p.categoria !== 'bebes' && p.categoria !== 'Bebes') return false;
+        } else if (p.categoria !== categoria) return false;
+      }
       if (marca && p.marca !== marca) return false;
       return true;
     });
