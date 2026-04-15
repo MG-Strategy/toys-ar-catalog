@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/lib/formatPrice';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +20,6 @@ const Cotizar = () => {
     }
     setSubmitting(true);
     try {
-      // 1. Check/create user
       const { data: existingUser } = await supabase
         .from('usuarios')
         .select('id')
@@ -45,7 +43,6 @@ const Cotizar = () => {
         userId = newUser.id;
       }
 
-      // 2. Create quote
       const { data: quote, error: quoteErr } = await supabase
         .from('cotizaciones_globales')
         .insert({
@@ -60,7 +57,6 @@ const Cotizar = () => {
         .single();
       if (quoteErr) throw quoteErr;
 
-      // 3. Insert items
       const quoteItems = items.map(i => ({
         id_cotizacion_global: quote.id,
         id_usuario: userId,
@@ -106,8 +102,6 @@ const Cotizar = () => {
                 <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-semibold">Producto</th>
                   <th className="text-center p-3 font-semibold">Cantidad</th>
-                  <th className="text-right p-3 font-semibold">Precio unit.</th>
-                  <th className="text-right p-3 font-semibold">Subtotal</th>
                   <th className="p-3 w-10"></th>
                 </tr>
               </thead>
@@ -124,8 +118,6 @@ const Cotizar = () => {
                         className="w-16 text-center rounded border border-input bg-background py-1"
                       />
                     </td>
-                    <td className="p-3 text-right">{formatPrice(item.precio_publico)}</td>
-                    <td className="p-3 text-right font-bold">{formatPrice(item.cantidad * item.precio_publico)}</td>
                     <td className="p-3">
                       <button onClick={() => removeItem(item.id)} className="text-accent hover:opacity-70">
                         <X className="w-4 h-4" />
@@ -135,9 +127,8 @@ const Cotizar = () => {
                 ))}
               </tbody>
             </table>
-            <div className="p-4 border-t border-border flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">* Los precios pueden variar al momento de confirmar la cotización</span>
-              <span className="text-lg font-extrabold text-primary">Total estimado: {formatPrice(totalPrice)}</span>
+            <div className="p-4 border-t border-border text-center">
+              <p className="text-sm text-muted-foreground font-medium">📩 Recibirás tu presupuesto detallado por email</p>
             </div>
           </div>
 
