@@ -4,7 +4,7 @@ import { getDisplayName } from '@/lib/categoryLabels';
 const categories = [
   { dbValue: 'Vehiculos', image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=400&q=80' },
   { dbValue: 'Peluches', image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=400&q=80' },
-  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1602734846297-9299fc2d4703?w=400&q=80', fallbackColor: '#F48FB1', fallbackEmoji: '👧' },
+  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=400&q=80', fallbackColor: '#F48FB1', fallbackEmoji: '👧' },
   { dbValue: 'Muñecos', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400&q=80' },
   { dbValue: 'Juegos de Mesa', image: 'https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=400&q=80' },
   { dbValue: 'juguetes_educativos', image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&q=80' },
