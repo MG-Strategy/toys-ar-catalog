@@ -41,10 +41,24 @@ const ProductCard = ({ product }: { product: Product }) => {
   };
 
   return (
-    <div
-      className="bg-card rounded-lg shadow hover:shadow-xl transition-shadow flex flex-col overflow-hidden border border-border"
-      style={{ borderLeft: `4px solid ${borderColor}` }}
-    >
+    <div className="bg-card rounded-lg shadow hover:shadow-xl transition-shadow flex flex-col overflow-hidden border border-border">
+      {/* Product Image */}
+      <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
+        {product.url_imagen ? (
+          <img
+            src={product.url_imagen}
+            alt={product.nombre}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center text-muted-foreground/50">
+            <Image className="w-12 h-12 mb-2" />
+            <span className="text-xs">Sin imagen</span>
+          </div>
+        )}
+      </div>
+
       <div className="p-5 flex flex-col flex-1 gap-2">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-bold text-lg text-card-foreground capitalize leading-tight">{product.nombre}</h3>
