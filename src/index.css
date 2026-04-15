@@ -63,3 +63,12 @@
     @apply bg-background text-foreground font-nunito;
   }
 }
+
+@keyframes pulse-chat {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5); }
+  50% { box-shadow: 0 0 0 12px hsl(var(--primary) / 0); }
+}
+
+.animate-pulse-chat {
+  animation: pulse-chat 2s ease-in-out infinite;
+}
