@@ -104,4 +104,4 @@ const Catalogo = () => {
   );
 };
 
-export default Index;
+export default Catalogo;
