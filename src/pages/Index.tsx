@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 
 const categories = [
-  { emoji: '🚗', name: 'Vehículos', gradient: 'linear-gradient(135deg, #1565C0, #42A5F5)' },
-  { emoji: '🧸', name: 'Peluches', gradient: 'linear-gradient(135deg, #E91E63, #F48FB1)' },
-  { emoji: '👧', name: 'Muñecas', gradient: 'linear-gradient(135deg, #7B1FA2, #CE93D8)' },
-  { emoji: '🎲', name: 'Juegos de Mesa', gradient: 'linear-gradient(135deg, #2E7D32, #81C784)' },
-  { emoji: '🤖', name: 'Muñecos', gradient: 'linear-gradient(135deg, #E65100, #FFB74D)' },
+  { name: 'Vehículos', image: '/categorias/vehiculos.jpg' },
+  { name: 'Peluches', emoji: '🧸', gradient: 'linear-gradient(135deg, #E91E63, #F48FB1)' },
+  { name: 'Muñecas', image: '/categorias/munecas.jpg' },
+  { name: 'Juegos de Mesa', emoji: '🎲', gradient: 'linear-gradient(135deg, #2E7D32, #81C784)' },
+  { name: 'Muñecos', emoji: '🤖', gradient: 'linear-gradient(135deg, #E65100, #FFB74D)' },
+  { name: 'Bebés', image: '/categorias/bebes.jpg' },
 ];
 
 const features = [
