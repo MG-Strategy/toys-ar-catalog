@@ -68,7 +68,6 @@ const Cotizar = () => {
         id_producto: i.id,
         cantidad_productos: i.cantidad,
         precio_publico: i.precio_publico,
-        subtotal: i.cantidad * i.precio_publico,
       }));
       const { error: itemsErr } = await supabase.from('cotizacion_productos').insert(quoteItems);
       if (itemsErr) throw itemsErr;
