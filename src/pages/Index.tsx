@@ -86,7 +86,15 @@ const Index = () => {
                 onError={(e) => {
                   const target = e.currentTarget;
                   target.style.display = 'none';
-                  target.parentElement!.style.backgroundColor = '#1565C0';
+                  const parent = target.parentElement!;
+                  parent.style.backgroundColor = (cat as any).fallbackColor || '#1565C0';
+                  if ((cat as any).fallbackEmoji) {
+                    const emojiEl = document.createElement('span');
+                    emojiEl.textContent = (cat as any).fallbackEmoji;
+                    emojiEl.className = 'absolute inset-0 flex items-center justify-center text-6xl';
+                    emojiEl.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3.5rem;';
+                    parent.appendChild(emojiEl);
+                  }
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
