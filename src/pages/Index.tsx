@@ -61,11 +61,22 @@ const Index = () => {
             <button
               key={cat.name}
               onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(cat.name)}`)}
-              className="rounded-2xl p-8 flex flex-col items-center gap-3 hover:scale-105 transition-transform shadow-lg cursor-pointer text-white"
-              style={{ background: cat.gradient }}
+              className="rounded-2xl overflow-hidden flex flex-col items-center hover:scale-105 transition-transform shadow-lg cursor-pointer text-white relative h-48"
+              style={cat.gradient ? { background: cat.gradient } : undefined}
             >
-              <span style={{ fontSize: '5rem', lineHeight: 1 }}>{cat.emoji}</span>
-              <span className="font-bold text-lg">{cat.name}</span>
+              {cat.image ? (
+                <>
+                  <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                    <span className="font-bold text-lg">{cat.name}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full w-full p-8 gap-3">
+                  <span style={{ fontSize: '5rem', lineHeight: 1 }}>{cat.emoji}</span>
+                  <span className="font-bold text-lg">{cat.name}</span>
+                </div>
+              )}
             </button>
           ))}
         </div>
