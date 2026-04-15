@@ -6,10 +6,13 @@ export const categoryDisplayName: Record<string, string> = {
   'Muñecos': 'Muñecos',
   'Juegos de Mesa': 'Juegos de Mesa',
   'bebes': 'Bebés',
+  'Bebes': 'Bebés',
   'exterior': 'Exterior',
   'manualidades': 'Manualidades',
   'electronicos': 'Electrónicos',
   'juguetes_educativos': 'Juguetes Educativos',
+  'Accion': 'Acción',
+  'Didacticos': 'Didácticos',
   'otros': 'Otros',
 };
 

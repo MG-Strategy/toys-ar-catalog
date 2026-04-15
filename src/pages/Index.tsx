@@ -1,13 +1,21 @@
 import { useNavigate } from 'react-router-dom';
+import { getDisplayName } from '@/lib/categoryLabels';
 
-// dbValue = exact Supabase categoria value, label = display name
 const categories = [
-  { dbValue: 'Vehiculos', label: 'Vehículos', image: '/categorias/vehiculos.jpg' },
-  { dbValue: 'Peluches', label: 'Peluches', emoji: '🧸', gradient: 'linear-gradient(135deg, #E91E63, #F48FB1)' },
-  { dbValue: 'Muñecas', label: 'Muñecas', image: '/categorias/munecas.jpg' },
-  { dbValue: 'Juegos de Mesa', label: 'Juegos de Mesa', emoji: '🎲', gradient: 'linear-gradient(135deg, #2E7D32, #81C784)' },
-  { dbValue: 'Muñecos', label: 'Muñecos', emoji: '🤖', gradient: 'linear-gradient(135deg, #E65100, #FFB74D)' },
-  { dbValue: 'bebes', label: 'Bebés', image: '/categorias/bebes.jpg' },
+  { dbValue: 'Vehiculos', image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400' },
+  { dbValue: 'Peluches', image: 'https://images.unsplash.com/photo-1558679908-541bcf1249ff?w=400' },
+  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1603356033288-acfcb54801e6?w=400' },
+  { dbValue: 'Muñecos', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400' },
+  { dbValue: 'Juegos de Mesa', image: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=400' },
+  { dbValue: 'juguetes_educativos', image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=400' },
+  { dbValue: 'bebes', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400' },
+  { dbValue: 'exterior', image: 'https://images.unsplash.com/photo-1575783970733-1aaedde1db74?w=400' },
+  { dbValue: 'manualidades', image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400' },
+  { dbValue: 'electronicos', image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=400' },
+  { dbValue: 'Accion', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400' },
+  { dbValue: 'Didacticos', image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400' },
+  { dbValue: 'Bebes', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400' },
+  { dbValue: 'otros', image: 'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=400' },
 ];
 
 const features = [
