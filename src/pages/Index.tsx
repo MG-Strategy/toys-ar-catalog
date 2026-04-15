@@ -20,34 +20,46 @@ const Index = () => {
 
   return (
     <div className="flex flex-col">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-secondary/30 via-secondary/10 to-background py-20 md:py-28">
-        <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-secondary/30 animate-bounce" style={{ animationDuration: '3s' }} />
-        <div className="absolute top-32 right-20 w-10 h-10 rounded-full bg-primary/20 animate-bounce" style={{ animationDuration: '4s' }} />
-        <div className="absolute bottom-16 left-1/4 w-12 h-12 rotate-45 bg-accent/15 animate-bounce" style={{ animationDuration: '3.5s' }} />
-        <div className="absolute top-20 right-1/3 w-8 h-8 bg-primary/20 rounded-full animate-bounce" style={{ animationDuration: '2.5s' }} />
+      {/* Hero - pastel gradient style */}
+      <section 
+        className="relative overflow-hidden py-20 md:py-28"
+        style={{ 
+          background: 'linear-gradient(135deg, #E0F7FA 0%, #FCE4EC 50%, #FFF3E0 100%)' 
+        }}
+      >
+        {/* Floating decorative elements */}
+        <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-sky-300/40 animate-bounce" style={{ animationDuration: '3s' }} />
+        <div className="absolute top-32 right-20 w-10 h-10 rounded-full bg-pink-300/40 animate-bounce" style={{ animationDuration: '4s' }} />
+        <div className="absolute bottom-16 left-1/4 w-12 h-12 rotate-45 bg-rose-200/30 animate-bounce" style={{ animationDuration: '3.5s' }} />
+        <div className="absolute top-20 right-1/3 w-8 h-8 bg-cyan-300/40 rounded-full animate-bounce" style={{ animationDuration: '2.5s' }} />
         <div className="absolute bottom-10 right-10 text-5xl animate-bounce" style={{ animationDuration: '2s' }}>⭐</div>
-        <div className="absolute top-10 right-10 text-4xl animate-bounce" style={{ animationDuration: '3s' }}>🎈</div>
-
+        
         <div className="container mx-auto px-4 text-center relative z-10">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-4 leading-tight">
-            Los mejores juguetes,<br />al mejor precio
+          {/* Balloon emoji */}
+          <div className="text-6xl mb-4">🎈</div>
+          
+          <h1 className="text-4xl md:text-6xl font-extrabold text-gray-800 mb-4 leading-tight">
+            ¡Cotizá tus juguetes{' '}
+            <span style={{ color: '#26C6DA' }}>favoritos</span>{' '}
+            <span style={{ color: '#F48FB1' }}>al instante!</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8">
-            Cotizá en segundos, recibí tu presupuesto al instante
+          <p className="text-lg md:text-xl text-gray-600 max-w-xl mx-auto mb-8">
+            Armá tu lista de juguetes, elegí las cantidades y pedí tu cotización personalizada. ¡Es rápido y fácil!
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => navigate('/catalogo')}
-              className="px-8 py-4 rounded-lg bg-primary text-primary-foreground font-bold text-lg hover:opacity-90 transition-opacity shadow-lg"
+              className="px-8 py-4 rounded-full font-bold text-lg hover:opacity-90 transition-opacity shadow-lg"
+              style={{ backgroundColor: '#26C6DA', color: 'white' }}
             >
-              🧸 Ver catálogo
+              🛍️ Cotizá ahora
             </button>
             <button
               onClick={() => navigate('/cotizar')}
-              className="px-8 py-4 rounded-lg bg-card text-foreground font-bold text-lg border-2 border-primary hover:bg-primary/10 transition-colors shadow-lg"
+              className="px-8 py-4 rounded-full bg-white/80 text-gray-700 font-bold text-lg border-2 hover:bg-white transition-colors shadow-lg"
+              style={{ borderColor: '#F48FB1' }}
             >
-              💬 Pedir cotización
+              💬 Ver mi cotización
             </button>
           </div>
         </div>
