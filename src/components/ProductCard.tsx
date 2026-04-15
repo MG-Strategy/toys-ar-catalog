@@ -1,7 +1,7 @@
 import { useCart } from '@/contexts/CartContext';
 import { formatPrice } from '@/lib/formatPrice';
 import { getCategoryColor } from '@/lib/categoryColors';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Image } from 'lucide-react';
 
 interface Product {
   id: number;
@@ -11,6 +11,8 @@ interface Product {
   stock: number;
   proveedor: string;
   precio_publico: number;
+  url_imagen?: string | null;
+  descripcion?: string | null;
 }
 
 const ProductCard = ({ product }: { product: Product }) => {
@@ -30,6 +32,23 @@ const ProductCard = ({ product }: { product: Product }) => {
 
   return (
     <div className="bg-card rounded-lg shadow-lg hover:shadow-xl transition-shadow flex flex-col overflow-hidden border border-border">
+      {/* Product Image */}
+      <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
+        {product.url_imagen ? (
+          <img 
+            src={product.url_imagen} 
+            alt={product.nombre}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center text-muted-foreground/50">
+            <Image className="w-12 h-12 mb-2" />
+            <span className="text-xs">Sin imagen</span>
+          </div>
+        )}
+      </div>
+
       <div className="p-5 flex flex-col flex-1 gap-2">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-bold text-lg text-card-foreground capitalize leading-tight">{product.nombre}</h3>
@@ -37,6 +56,9 @@ const ProductCard = ({ product }: { product: Product }) => {
             {product.categoria}
           </span>
         </div>
+        {product.descripcion && (
+          <p className="text-xs text-muted-foreground line-clamp-2">{product.descripcion}</p>
+        )}
         <p className="text-sm text-muted-foreground">{product.marca}</p>
         <p className="text-xs text-muted-foreground/70">{product.proveedor}</p>
 
