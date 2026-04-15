@@ -1,7 +1,7 @@
 import { useCart } from '@/contexts/CartContext';
 import { formatPrice } from '@/lib/formatPrice';
 import { getCategoryColor } from '@/lib/categoryColors';
-import { Plus } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
 
 interface Product {
   id: number;
@@ -14,8 +14,19 @@ interface Product {
 }
 
 const ProductCard = ({ product }: { product: Product }) => {
-  const { addItem } = useCart();
+  const { items, addItem, updateQuantity, removeItem } = useCart();
   const inStock = product.stock > 0;
+  const cartItem = items.find(i => i.id === product.id);
+  const qty = cartItem?.cantidad ?? 0;
+
+  const handleDecrease = () => {
+    if (qty <= 1) removeItem(product.id);
+    else updateQuantity(product.id, qty - 1);
+  };
+
+  const handleIncrease = () => {
+    updateQuantity(product.id, qty + 1);
+  };
 
   return (
     <div className="bg-card rounded-lg shadow-lg hover:shadow-xl transition-shadow flex flex-col overflow-hidden border border-border">
@@ -36,13 +47,33 @@ const ProductCard = ({ product }: { product: Product }) => {
               {inStock ? 'En stock' : 'Sin stock'}
             </span>
           </div>
-          <button
-            disabled={!inStock}
-            onClick={() => addItem({ id: product.id, nombre: product.nombre, precio_publico: product.precio_publico })}
-            className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Plus className="w-4 h-4" /> Agregar
-          </button>
+          {qty > 0 ? (
+            <div className="flex items-center gap-0 rounded-md overflow-hidden border border-primary">
+              <button
+                onClick={handleDecrease}
+                className="flex items-center justify-center w-8 h-9 bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="flex items-center justify-center w-8 h-9 text-sm font-bold text-card-foreground bg-card select-none">
+                {qty}
+              </span>
+              <button
+                onClick={handleIncrease}
+                className="flex items-center justify-center w-8 h-9 bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              disabled={!inStock}
+              onClick={() => addItem({ id: product.id, nombre: product.nombre, precio_publico: product.precio_publico })}
+              className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-4 h-4" /> Agregar
+            </button>
+          )}
         </div>
       </div>
     </div>
