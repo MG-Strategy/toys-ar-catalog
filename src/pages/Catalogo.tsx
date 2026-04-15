@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import { Search, X } from 'lucide-react';
@@ -15,11 +16,12 @@ interface Product {
   descripcion?: string | null;
 }
 
-const Index = () => {
+const Catalogo = () => {
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [categoria, setCategoria] = useState('');
+  const [categoria, setCategoria] = useState(searchParams.get('categoria') || '');
   const [marca, setMarca] = useState('');
 
   useEffect(() => {
