@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import { Search, X } from 'lucide-react';
+import { getDisplayName } from '@/lib/categoryLabels';
 
 interface Product {
   id: number;
@@ -63,7 +64,7 @@ const Catalogo = () => {
         </div>
         <select value={categoria} onChange={e => setCategoria(e.target.value)} className="px-3 py-2 rounded-md border border-input bg-background text-sm min-w-[150px]">
           <option value="">Todas las categorías</option>
-          {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+          {categorias.map(c => <option key={c} value={c}>{getDisplayName(c)}</option>)}
         </select>
         <select value={marca} onChange={e => setMarca(e.target.value)} className="px-3 py-2 rounded-md border border-input bg-background text-sm min-w-[150px]">
           <option value="">Todas las marcas</option>
