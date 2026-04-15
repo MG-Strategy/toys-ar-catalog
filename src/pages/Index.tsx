@@ -4,7 +4,7 @@ import { getDisplayName } from '@/lib/categoryLabels';
 const categories = [
   { dbValue: 'Vehiculos', image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=400&q=80' },
   { dbValue: 'Peluches', image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=400&q=80' },
-  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=400&q=80' },
+  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=400&q=80' },
   { dbValue: 'Muñecos', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400&q=80' },
   { dbValue: 'Juegos de Mesa', image: 'https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=400&q=80' },
   { dbValue: 'juguetes_educativos', image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&q=80' },
@@ -29,31 +29,42 @@ const Index = () => {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="py-20 md:py-28 bg-white">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight" style={{ color: '#1a1a2e' }}>
-            ¡Cotizá tus juguetes{' '}
-            <span style={{ color: '#1565C0' }}>favoritos</span>{' '}
-            <span style={{ color: '#FFD600' }}>al instante!</span>
-          </h1>
-          <p className="text-lg md:text-xl max-w-xl mx-auto mb-8" style={{ color: '#555' }}>
-            Armá tu lista de juguetes, elegí las cantidades y pedí tu cotización personalizada. ¡Es rápido y fácil!
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => navigate('/catalogo')}
-              className="px-8 py-4 rounded-full font-bold text-lg hover:opacity-90 transition-opacity shadow-lg text-white"
-              style={{ backgroundColor: '#1565C0' }}
-            >
-              🛍️ Cotizá ahora
-            </button>
-            <button
-              onClick={() => navigate('/cotizar')}
-              className="px-8 py-4 rounded-full bg-white font-bold text-lg border-2 hover:bg-gray-50 transition-colors shadow-lg"
-              style={{ borderColor: '#FFD600', color: '#1a1a2e' }}
-            >
-              💬 Ver mi cotización
-            </button>
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-10">
+          {/* Left side - text */}
+          <div className="md:w-[60%] text-center md:text-left">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight" style={{ color: '#1a1a2e' }}>
+              ¡Cotizá tus juguetes{' '}
+              <span style={{ color: '#1565C0' }}>favoritos</span>{' '}
+              <span style={{ color: '#FFD600' }}>al instante!</span>
+            </h1>
+            <p className="text-lg md:text-xl max-w-lg mb-8" style={{ color: '#555' }}>
+              Armá tu lista de juguetes, elegí las cantidades y pedí tu cotización personalizada. ¡Es rápido y fácil!
+            </p>
+            <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
+              <button
+                onClick={() => navigate('/catalogo')}
+                className="px-8 py-4 rounded-full font-bold text-lg hover:opacity-90 transition-opacity shadow-lg text-white"
+                style={{ backgroundColor: '#1565C0' }}
+              >
+                🛍️ Cotizá ahora
+              </button>
+              <button
+                onClick={() => navigate('/cotizar')}
+                className="px-8 py-4 rounded-full bg-white font-bold text-lg border-2 hover:bg-gray-50 transition-colors shadow-lg"
+                style={{ borderColor: '#FFD600', color: '#1a1a2e' }}
+              >
+                💬 Ver mi cotización
+              </button>
+            </div>
+          </div>
+          {/* Right side - image */}
+          <div className="md:w-[40%]">
+            <img
+              src="https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=600&q=80"
+              alt="Juguetes coloridos"
+              className="w-full rounded-2xl shadow-xl object-cover max-h-[400px]"
+            />
           </div>
         </div>
       </section>
