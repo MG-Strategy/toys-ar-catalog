@@ -90,7 +90,9 @@ const Dashboard = () => {
   const [showPendientes, setShowPendientes] = useState(false);
   const [pendientes, setPendientes] = useState<any[]>([]);
   const [loadingPendientes, setLoadingPendientes] = useState(false);
-  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number }[]>([]);
+  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string }[]>([]);
+  const [stockSearch, setStockSearch] = useState('');
+  const [stockFilter, setStockFilter] = useState<'todos' | 'sin' | 'critico' | 'bajo' | 'en'>('todos');
 
   // KPIs
   useEffect(() => {
@@ -269,15 +271,15 @@ const Dashboard = () => {
     (async () => {
       const { data } = await supabase
         .from('vista_catalogo_vigente')
-        .select('id, nombre, stock')
+        .select('id, nombre, stock, proveedor')
         .order('nombre', { ascending: true });
       if (data) {
         const seen = new Set<string>();
-        const arr: { id: string; nombre: string; stock: number }[] = [];
+        const arr: { id: string; nombre: string; stock: number; proveedor: string }[] = [];
         for (const r of data as any[]) {
           if (!r?.id || seen.has(r.id)) continue;
           seen.add(r.id);
-          arr.push({ id: r.id, nombre: r.nombre, stock: Number(r.stock ?? 0) });
+          arr.push({ id: r.id, nombre: r.nombre, stock: Number(r.stock ?? 0), proveedor: r.proveedor ?? '—' });
         }
         setStockAll(arr);
       }
@@ -470,35 +472,85 @@ const Dashboard = () => {
           <Card>
             <SectionTitle>Estado de stock</SectionTitle>
             {(() => {
-              const sinStock = stockAll.filter((p) => p.stock === 0);
-              const critico = stockAll.filter((p) => p.stock >= 1 && p.stock <= 10);
-              const bajo = stockAll.filter((p) => p.stock >= 11 && p.stock <= 50);
-              const enStock = stockAll.filter((p) => p.stock > 50);
-              const Col = ({ title, items, bg, color }: { title: string; items: typeof stockAll; bg: string; color: string }) => (
-                <div className="rounded-xl p-3" style={{ background: BG, border: `1px solid ${BORDER}` }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-semibold text-sm" style={{ color: TEXT }}>{title}</span>
-                    <Badge color={color} bg={bg}>{items.length}</Badge>
-                  </div>
-                  <ul className="space-y-2 max-h-72 overflow-auto pr-1">
-                    {items.map((p) => (
-                      <li key={p.id} className="flex items-center justify-between gap-2 text-xs" style={{ color: TEXT }}>
-                        <span className="truncate" title={p.nombre}>{p.nombre}</span>
-                        <Badge color={color} bg={bg}>{p.stock}</Badge>
-                      </li>
-                    ))}
-                    {items.length === 0 && (
-                      <li className="text-xs text-center py-2" style={{ color: MUTED }}>—</li>
-                    )}
-                  </ul>
-                </div>
-              );
+              const getEstado = (s: number) => {
+                if (s === 0) return { key: 'sin', label: 'Sin stock', bg: '#ef4444', color: '#fff' };
+                if (s <= 10) return { key: 'critico', label: 'Stock crítico', bg: '#f97316', color: '#fff' };
+                if (s <= 50) return { key: 'bajo', label: 'Stock bajo', bg: YELLOW, color: '#0f172a' };
+                return { key: 'en', label: 'En stock', bg: '#16a34a', color: '#fff' };
+              };
+              const filtered = stockAll
+                .filter((p) => {
+                  if (stockSearch && !p.nombre.toLowerCase().includes(stockSearch.toLowerCase())) return false;
+                  if (stockFilter === 'todos') return true;
+                  return getEstado(p.stock).key === stockFilter;
+                })
+                .sort((a, b) => a.stock - b.stock);
+              const filters: { key: typeof stockFilter; label: string }[] = [
+                { key: 'todos', label: 'Todos' },
+                { key: 'sin', label: 'Sin stock' },
+                { key: 'critico', label: 'Stock crítico' },
+                { key: 'bajo', label: 'Stock bajo' },
+                { key: 'en', label: 'En stock' },
+              ];
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Col title="Sin stock" items={sinStock} bg="#ef4444" color="#fff" />
-                  <Col title="Stock crítico" items={critico} bg="#f97316" color="#fff" />
-                  <Col title="Stock bajo" items={bajo} bg={YELLOW} color="#0f172a" />
-                  <Col title="En stock" items={enStock} bg="#16a34a" color="#fff" />
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                    <input
+                      type="text"
+                      placeholder="Buscar por nombre..."
+                      value={stockSearch}
+                      onChange={(e) => setStockSearch(e.target.value)}
+                      className="px-3 py-2 rounded-md text-sm w-full sm:w-72 outline-none"
+                      style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {filters.map((f) => {
+                        const active = stockFilter === f.key;
+                        return (
+                          <button
+                            key={f.key}
+                            onClick={() => setStockFilter(f.key)}
+                            className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                            style={{
+                              background: active ? BLUE : BG,
+                              color: active ? '#fff' : TEXT,
+                              border: `1px solid ${active ? BLUE : BORDER}`,
+                            }}
+                          >
+                            {f.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${BORDER}` }}>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ color: MUTED, background: BG, borderBottom: `1px solid ${BORDER}` }}>
+                          <th className="text-left py-2 px-3 font-medium">Producto</th>
+                          <th className="text-left py-2 px-3 font-medium">Proveedor</th>
+                          <th className="text-right py-2 px-3 font-medium">Stock</th>
+                          <th className="text-left py-2 px-3 font-medium">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map((p) => {
+                          const est = getEstado(p.stock);
+                          return (
+                            <tr key={p.id} style={{ borderBottom: `1px solid ${BORDER}`, color: TEXT }}>
+                              <td className="py-2 px-3">{p.nombre}</td>
+                              <td className="py-2 px-3" style={{ color: MUTED }}>{p.proveedor}</td>
+                              <td className="py-2 px-3 text-right font-semibold">{p.stock}</td>
+                              <td className="py-2 px-3"><Badge color={est.color} bg={est.bg}>{est.label}</Badge></td>
+                            </tr>
+                          );
+                        })}
+                        {filtered.length === 0 && (
+                          <tr><td colSpan={4} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin resultados</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               );
             })()}
