@@ -30,6 +30,15 @@ type KPIs = {
   cotizaciones_pendientes?: number;
   valor_total_cotizado?: number;
   tiempo_respuesta_promedio?: number;
+  tiempo_respuesta_promedio_minutos?: number;
+};
+
+const formatTiempoRespuesta = (mins: number | null | undefined): string => {
+  if (mins == null || mins === 0) return 'Sin datos';
+  if (mins < 60) return `${Math.round(mins)} min`;
+  const h = Math.floor(mins / 60);
+  const m = Math.round(mins - h * 60);
+  return `${h}h ${m}m`;
 };
 
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -241,7 +250,7 @@ const Dashboard = () => {
           <Card>
             <div className="text-sm" style={{ color: MUTED }}>⚡ Tiempo respuesta promedio</div>
             <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>
-              {Math.round(kpis.tiempo_respuesta_promedio || 0)} min
+              {formatTiempoRespuesta(kpis.tiempo_respuesta_promedio_minutos ?? kpis.tiempo_respuesta_promedio)}
             </div>
           </Card>
         </section>
