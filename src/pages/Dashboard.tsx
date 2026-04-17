@@ -592,6 +592,74 @@ const Dashboard = () => {
           </Card>
         </section>
 
+
+        {/* Modal Pendientes */}
+        {showPendientes && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)' }}
+            onClick={() => setShowPendientes(false)}
+          >
+            <div
+              className="w-full max-w-4xl rounded-2xl border max-h-[85vh] overflow-hidden flex flex-col"
+              style={{ background: CARD, borderColor: BORDER }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: BORDER }}>
+                <h3 className="text-lg font-semibold" style={{ color: TEXT }}>Cotizaciones pendientes</h3>
+                <button
+                  onClick={() => setShowPendientes(false)}
+                  className="px-3 py-1 rounded-lg text-sm"
+                  style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+                >
+                  Cerrar ✕
+                </button>
+              </div>
+              <div className="overflow-auto p-5">
+                {loadingPendientes ? (
+                  <div className="text-center py-8" style={{ color: MUTED }}>Cargando…</div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
+                        <th className="text-left py-2 px-3">Cliente</th>
+                        <th className="text-left py-2 px-3">Fecha de cotización</th>
+                        <th className="text-right py-2 px-3">Total ARS</th>
+                        <th className="text-left py-2 px-3">Canal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendientes.map((c: any, i) => {
+                        const cliente =
+                          c.usuarios?.nombre_completo ||
+                          c.nombre_completo ||
+                          c.cliente ||
+                          c.nombre_cliente ||
+                          '—';
+                        const fechaIso =
+                          c.fecha_cotizacion || c.fecha_creacion || c.created_at || c.fecha || '';
+                        const total = Number(c.total_ars ?? c.total ?? c.monto_total ?? 0);
+                        const canal = c.canal || c.origen || '—';
+                        return (
+                          <tr key={c.id ?? i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                            <td className="py-2 px-3">{cliente}</td>
+                            <td className="py-2 px-3">{formatFechaCorta(fechaIso)}</td>
+                            <td className="py-2 px-3 text-right font-semibold" style={{ color: BLUE }}>{formatARS(total)}</td>
+                            <td className="py-2 px-3">{canal}</td>
+                          </tr>
+                        );
+                      })}
+                      {pendientes.length === 0 && (
+                        <tr><td colSpan={4} className="py-6 px-3 text-center" style={{ color: MUTED }}>Sin cotizaciones pendientes</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <footer className="text-center text-xs pb-4" style={{ color: MUTED }}>
           JugueteAR · Dashboard interno · acceso solo por URL
         </footer>
