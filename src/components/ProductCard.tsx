@@ -1,6 +1,7 @@
 import { useCart } from '@/contexts/CartContext';
 import { getCategoryColor } from '@/lib/categoryColors';
 import { getDisplayName } from '@/lib/categoryLabels';
+import { formatPrice } from '@/lib/formatPrice';
 import { Plus, Minus, Image } from 'lucide-react';
 
 interface Product {
@@ -78,6 +79,10 @@ const ProductCard = ({ product }: { product: Product }) => {
         )}
         <p className="text-sm text-muted-foreground">{product.marca}</p>
         <p className="text-xs text-muted-foreground/70">{product.proveedor}</p>
+
+        <p className="text-lg font-bold mt-1" style={{ color: '#1565C0' }}>
+          {formatPrice(product.precio_publico)}
+        </p>
 
         <div className="mt-auto pt-3 flex items-end justify-between gap-2">
           <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${inStock ? 'bg-toy-green/15 text-toy-green' : 'bg-accent/15 text-accent'}`}>
