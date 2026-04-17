@@ -277,6 +277,8 @@ const Dashboard = () => {
     setPendientes((data as any[]) || []);
     setLoadingPendientes(false);
   };
+
+  const rolBadge = (rol: string) => {
     const r = (rol || '').toLowerCase();
     if (r === 'admin') return <Badge color="#fff" bg={BLUE}>{rol}</Badge>;
     if (r === 'operador') return <Badge color="#0f172a" bg={YELLOW}>{rol}</Badge>;
