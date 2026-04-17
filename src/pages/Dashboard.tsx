@@ -73,6 +73,50 @@ const formatFechaCorta = (iso: string) => {
   return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`;
 };
 
+const todayStamp = () => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+const slugify = (s: string) =>
+  (s || 'export')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const csvCell = (v: any) => {
+  if (v == null) return '';
+  const s = String(v);
+  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+const downloadCSV = (filename: string, headers: string[], rows: any[][]) => {
+  const lines = [headers.map(csvCell).join(','), ...rows.map((r) => r.map(csvCell).join(','))];
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+const exportBtnStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: `1px solid ${'#334155'}`,
+  color: '#f1f5f9',
+  padding: '6px 12px',
+  borderRadius: 6,
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: 'pointer',
+};
+
 const Dashboard = () => {
   const [kpis, setKpis] = useState<KPIs>({});
   const [estados, setEstados] = useState<{ name: string; value: number }[]>([]);
@@ -90,7 +134,7 @@ const Dashboard = () => {
   const [showPendientes, setShowPendientes] = useState(false);
   const [pendientes, setPendientes] = useState<any[]>([]);
   const [loadingPendientes, setLoadingPendientes] = useState(false);
-  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string }[]>([]);
+  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string }[]>([]);
   const [stockSearch, setStockSearch] = useState('');
   const [stockFilter, setStockFilter] = useState<'todos' | 'sin' | 'critico' | 'bajo' | 'en'>('todos');
   const [cotizacionesFechas, setCotizacionesFechas] = useState<string[]>([]);
@@ -288,15 +332,22 @@ const Dashboard = () => {
     (async () => {
       const { data } = await supabase
         .from('vista_catalogo_vigente')
-        .select('id, nombre, stock, proveedor')
+        .select('id, nombre, stock, proveedor, categoria, marca')
         .order('nombre', { ascending: true });
       if (data) {
         const seen = new Set<string>();
-        const arr: { id: string; nombre: string; stock: number; proveedor: string }[] = [];
+        const arr: { id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string }[] = [];
         for (const r of data as any[]) {
           if (!r?.id || seen.has(r.id)) continue;
           seen.add(r.id);
-          arr.push({ id: r.id, nombre: r.nombre, stock: Number(r.stock ?? 0), proveedor: r.proveedor ?? '—' });
+          arr.push({
+            id: r.id,
+            nombre: r.nombre,
+            stock: Number(r.stock ?? 0),
+            proveedor: r.proveedor ?? '—',
+            categoria: r.categoria ?? '—',
+            marca: r.marca ?? '—',
+          });
         }
         setStockAll(arr);
       }
@@ -310,7 +361,7 @@ const Dashboard = () => {
     setLoadingPendientes(true);
     let { data, error } = await supabase
       .from('cotizaciones_globales')
-      .select('*, usuarios(nombre_completo)')
+      .select('*, usuarios(nombre_completo, email)')
       .eq('estado', 'pendiente');
     if (error) {
       const r = await supabase.from('cotizaciones_globales').select('*').eq('estado', 'pendiente');
@@ -388,6 +439,54 @@ const Dashboard = () => {
     }
     return Array.from(buckets.values()).sort((a, b) => a.sortKey - b.sortKey);
   }, [cotizacionesFechas, cotPeriodo]);
+
+  const estadoStockLabel = (s: number) => {
+    if (s === 0) return 'Sin stock';
+    if (s <= 10) return 'Stock crítico';
+    if (s <= 50) return 'Stock bajo';
+    return 'En stock';
+  };
+
+  const exportHistorico = () => {
+    if (!selectedProducto || historico.length === 0) return;
+    downloadCSV(
+      `juguetear_precios_${slugify(selectedProducto.nombre)}_${todayStamp()}.csv`,
+      ['nombre', 'codigo_proveedor', 'fecha_precio', 'precio_proveedor', 'precio_publico', 'margen_porcentaje', 'proveedor'],
+      historico.map((r: any) => [
+        r.nombre ?? selectedProducto.nombre,
+        r.codigo_proveedor ?? '',
+        r.fecha_precio ?? '',
+        r.precio_proveedor ?? '',
+        r.precio_publico ?? '',
+        r.margen_porcentaje ?? '',
+        r.proveedor ?? '',
+      ])
+    );
+  };
+
+  const exportPendientes = () => {
+    if (pendientes.length === 0) return;
+    downloadCSV(
+      `juguetear_pendientes_${todayStamp()}.csv`,
+      ['cliente', 'email', 'fecha_cotizacion', 'total', 'canal'],
+      pendientes.map((c: any) => [
+        c.usuarios?.nombre_completo ?? c.nombre_completo ?? c.cliente ?? c.nombre_cliente ?? '',
+        c.usuarios?.email ?? c.email ?? '',
+        c.fecha_cotizacion ?? c.fecha_creacion ?? c.created_at ?? '',
+        c.total_ars ?? c.total ?? c.monto_total ?? '',
+        c.canal ?? c.origen ?? '',
+      ])
+    );
+  };
+
+  const exportStock = (rows: { nombre: string; proveedor: string; stock: number; categoria: string; marca: string }[]) => {
+    if (rows.length === 0) return;
+    downloadCSV(
+      `juguetear_stock_${todayStamp()}.csv`,
+      ['nombre', 'proveedor', 'stock', 'estado_stock', 'categoria', 'marca'],
+      rows.map((p) => [p.nombre, p.proveedor, p.stock, estadoStockLabel(p.stock), p.categoria, p.marca])
+    );
+  };
 
   return (
     <div style={{ background: BG, minHeight: '100vh', color: TEXT, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }}>
@@ -470,7 +569,16 @@ const Dashboard = () => {
           </Card>
 
           <Card>
-            <SectionTitle>Histórico de precios</SectionTitle>
+            <div className="flex items-center justify-between mb-4">
+              <SectionTitle>Histórico de precios</SectionTitle>
+              <button
+                onClick={exportHistorico}
+                disabled={!selectedProducto || historico.length === 0}
+                style={{ ...exportBtnStyle, opacity: !selectedProducto || historico.length === 0 ? 0.5 : 1 }}
+              >
+                ↓ Exportar CSV
+              </button>
+            </div>
             <div className="mb-4 flex items-center gap-3 flex-wrap">
               <div className="relative" style={{ minWidth: 280 }}>
                 <input
@@ -617,7 +725,7 @@ const Dashboard = () => {
         {/* SECTION 3.5 — Estado de stock */}
         <section>
           <Card>
-            <SectionTitle>Estado de stock</SectionTitle>
+            
             {(() => {
               const getEstado = (s: number) => {
                 if (s === 0) return { key: 'sin', label: 'Sin stock', bg: '#ef4444', color: '#fff' };
@@ -641,6 +749,16 @@ const Dashboard = () => {
               ];
               return (
                 <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
+                    <SectionTitle>Estado de stock</SectionTitle>
+                    <button
+                      onClick={() => exportStock(filtered)}
+                      disabled={filtered.length === 0}
+                      style={{ ...exportBtnStyle, opacity: filtered.length === 0 ? 0.5 : 1 }}
+                    >
+                      ↓ Exportar CSV
+                    </button>
+                  </div>
                   <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                     <input
                       type="text"
@@ -831,13 +949,22 @@ const Dashboard = () => {
             >
               <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: BORDER }}>
                 <h3 className="text-lg font-semibold" style={{ color: TEXT }}>Cotizaciones pendientes</h3>
-                <button
-                  onClick={() => setShowPendientes(false)}
-                  className="px-3 py-1 rounded-lg text-sm"
-                  style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
-                >
-                  Cerrar ✕
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={exportPendientes}
+                    disabled={pendientes.length === 0}
+                    style={{ ...exportBtnStyle, opacity: pendientes.length === 0 ? 0.5 : 1 }}
+                  >
+                    ↓ Exportar CSV
+                  </button>
+                  <button
+                    onClick={() => setShowPendientes(false)}
+                    className="px-3 py-1 rounded-lg text-sm"
+                    style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+                  >
+                    Cerrar ✕
+                  </button>
+                </div>
               </div>
               <div className="overflow-auto p-5">
                 {loadingPendientes ? (
