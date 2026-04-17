@@ -73,6 +73,50 @@ const formatFechaCorta = (iso: string) => {
   return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`;
 };
 
+const todayStamp = () => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+const slugify = (s: string) =>
+  (s || 'export')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const csvCell = (v: any) => {
+  if (v == null) return '';
+  const s = String(v);
+  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+const downloadCSV = (filename: string, headers: string[], rows: any[][]) => {
+  const lines = [headers.map(csvCell).join(','), ...rows.map((r) => r.map(csvCell).join(','))];
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+const exportBtnStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: `1px solid ${'#334155'}`,
+  color: '#f1f5f9',
+  padding: '6px 12px',
+  borderRadius: 6,
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: 'pointer',
+};
+
 const Dashboard = () => {
   const [kpis, setKpis] = useState<KPIs>({});
   const [estados, setEstados] = useState<{ name: string; value: number }[]>([]);
