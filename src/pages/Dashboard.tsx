@@ -431,8 +431,10 @@ const Dashboard = () => {
                         className="px-3 py-2 cursor-pointer hover:opacity-80"
                         style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}
                       >
-                        <div>{p.nombre}</div>
-                        <div className="text-[10px]" style={{ color: MUTED }}>{p.id}</div>
+                        <div className="text-sm font-medium">{p.nombre}</div>
+                        <div className="text-[10px]" style={{ color: MUTED }}>
+                          Código: {p.codigo_proveedor || '—'}
+                        </div>
                       </li>
                     ))}
                   </ul>
