@@ -111,35 +111,71 @@ const Dashboard = () => {
     })();
   }, []);
 
-  // Productos para histórico
+  // Productos para histórico (id + nombre desde catálogo vigente)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('vista_historico_precios').select('nombre');
+      const { data } = await supabase
+        .from('vista_catalogo_vigente')
+        .select('id, nombre')
+        .order('nombre', { ascending: true });
       if (data) {
-        const unique = Array.from(new Set(data.map((r: any) => r.nombre).filter(Boolean))).sort();
-        setProductos(unique as string[]);
-        if (unique.length && !selectedProducto) setSelectedProducto(unique[0] as string);
+        const seen = new Set<string>();
+        const opts: ProductoOpt[] = [];
+        for (const r of data as any[]) {
+          if (!r?.id || !r?.nombre) continue;
+          if (seen.has(r.id)) continue;
+          seen.add(r.id);
+          opts.push({ id: r.id, nombre: r.nombre });
+        }
+        setProductos(opts);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Histórico precios del producto seleccionado
+  // Histórico precios + stock del producto seleccionado
   useEffect(() => {
     if (!selectedProducto) return;
     (async () => {
-      const { data } = await supabase
-        .from('vista_historico_precios')
-        .select('*')
-        .eq('nombre', selectedProducto)
-        .order('fecha_precio', { ascending: true });
-      if (data) {
-        setHistorico(data);
-        const last = data[data.length - 1] as any;
+      const [hist, cat] = await Promise.all([
+        supabase
+          .from('vista_historico_precios')
+          .select('*')
+          .eq('nombre', selectedProducto.nombre)
+          .order('fecha_precio', { ascending: true }),
+        supabase
+          .from('vista_catalogo_vigente')
+          .select('stock')
+          .eq('id', selectedProducto.id)
+          .maybeSingle(),
+      ]);
+      if (hist.data) {
+        const mapped = (hist.data as any[]).map((r) => ({
+          ...r,
+          fecha_label: formatFechaCorta(r.fecha_precio),
+        }));
+        setHistorico(mapped);
+        const last = hist.data[hist.data.length - 1] as any;
         setMargenActual(last?.margen_porcentaje ?? null);
       }
+      setStock((cat.data as any)?.stock ?? null);
     })();
   }, [selectedProducto]);
+
+  const filteredProductos = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return productos.slice(0, 20);
+    return productos
+      .filter((p) => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [search, productos]);
+
+  const stockBadge = () => {
+    if (stock == null) return null;
+    if (stock === 0) return <Badge color="#fff" bg="#ef4444">Sin stock</Badge>;
+    if (stock <= 10) return <Badge color="#fff" bg="#f97316">Stock crítico ({stock} unidades)</Badge>;
+    if (stock <= 50) return <Badge color="#0f172a" bg={YELLOW}>Stock bajo ({stock} unidades)</Badge>;
+    return <Badge color="#fff" bg="#16a34a">En stock ({stock} unidades)</Badge>;
+  };
 
   // Ranking productos
   useEffect(() => {
