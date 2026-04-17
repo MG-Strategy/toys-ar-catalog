@@ -167,10 +167,8 @@ const Dashboard = () => {
 
   const filteredProductos = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return productos.slice(0, 20);
-    return productos
-      .filter((p) => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))
-      .slice(0, 20);
+    if (!q) return productos;
+    return productos.filter((p) => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
   }, [search, productos]);
 
   const stockBadge = () => {
