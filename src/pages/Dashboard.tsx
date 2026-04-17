@@ -440,6 +440,54 @@ const Dashboard = () => {
     return Array.from(buckets.values()).sort((a, b) => a.sortKey - b.sortKey);
   }, [cotizacionesFechas, cotPeriodo]);
 
+  const estadoStockLabel = (s: number) => {
+    if (s === 0) return 'Sin stock';
+    if (s <= 10) return 'Stock crítico';
+    if (s <= 50) return 'Stock bajo';
+    return 'En stock';
+  };
+
+  const exportHistorico = () => {
+    if (!selectedProducto || historico.length === 0) return;
+    downloadCSV(
+      `juguetear_precios_${slugify(selectedProducto.nombre)}_${todayStamp()}.csv`,
+      ['nombre', 'codigo_proveedor', 'fecha_precio', 'precio_proveedor', 'precio_publico', 'margen_porcentaje', 'proveedor'],
+      historico.map((r: any) => [
+        r.nombre ?? selectedProducto.nombre,
+        r.codigo_proveedor ?? '',
+        r.fecha_precio ?? '',
+        r.precio_proveedor ?? '',
+        r.precio_publico ?? '',
+        r.margen_porcentaje ?? '',
+        r.proveedor ?? '',
+      ])
+    );
+  };
+
+  const exportPendientes = () => {
+    if (pendientes.length === 0) return;
+    downloadCSV(
+      `juguetear_pendientes_${todayStamp()}.csv`,
+      ['cliente', 'email', 'fecha_cotizacion', 'total', 'canal'],
+      pendientes.map((c: any) => [
+        c.usuarios?.nombre_completo ?? c.nombre_completo ?? c.cliente ?? c.nombre_cliente ?? '',
+        c.usuarios?.email ?? c.email ?? '',
+        c.fecha_cotizacion ?? c.fecha_creacion ?? c.created_at ?? '',
+        c.total_ars ?? c.total ?? c.monto_total ?? '',
+        c.canal ?? c.origen ?? '',
+      ])
+    );
+  };
+
+  const exportStock = (rows: { nombre: string; proveedor: string; stock: number; categoria: string; marca: string }[]) => {
+    if (rows.length === 0) return;
+    downloadCSV(
+      `juguetear_stock_${todayStamp()}.csv`,
+      ['nombre', 'proveedor', 'stock', 'estado_stock', 'categoria', 'marca'],
+      rows.map((p) => [p.nombre, p.proveedor, p.stock, estadoStockLabel(p.stock), p.categoria, p.marca])
+    );
+  };
+
   return (
     <div style={{ background: BG, minHeight: '100vh', color: TEXT, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }}>
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
