@@ -411,7 +411,7 @@ const Dashboard = () => {
                   onChange={(e) => { setSearch(e.target.value); setShowResults(true); }}
                   onFocus={() => setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 150)}
-                  placeholder={selectedProducto?.nombre || 'Buscar por nombre o UUID...'}
+                  placeholder={selectedProducto?.nombre || 'Buscar por nombre o código...'}
                   className="w-full px-3 py-2 rounded-lg text-sm"
                   style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
                 />
