@@ -342,6 +342,63 @@ const Dashboard = () => {
     []
   );
 
+  const tooltipStyle = useMemo(
+    () => ({
+      background: CARD,
+      border: `1px solid ${BORDER}`,
+      borderRadius: 8,
+      color: TEXT,
+    }),
+    []
+  );
+
+  // Cotizaciones agrupadas según período seleccionado
+  const cotizacionesData = useMemo(() => {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const now = new Date();
+    let from = new Date(now);
+    let groupBy: 'day' | 'week' | 'month' = 'day';
+    if (cotPeriodo === '7d') { from.setDate(now.getDate() - 6); groupBy = 'day'; }
+    else if (cotPeriodo === '30d') { from.setDate(now.getDate() - 29); groupBy = 'day'; }
+    else if (cotPeriodo === '3m') { from.setMonth(now.getMonth() - 3); groupBy = 'week'; }
+    else { from.setFullYear(now.getFullYear() - 1); groupBy = 'month'; }
+    from.setHours(0, 0, 0, 0);
+
+    const getWeek = (d: Date) => {
+      const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = (target.getUTCDay() + 6) % 7;
+      target.setUTCDate(target.getUTCDate() - dayNum + 3);
+      const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+      const diff = (target.getTime() - firstThursday.getTime()) / 86400000;
+      return 1 + Math.round((diff - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+    };
+
+    const buckets = new Map<string, { label: string; sortKey: number; total: number }>();
+    for (const iso of cotizacionesFechas) {
+      const d = new Date(iso);
+      if (isNaN(d.getTime()) || d < from) continue;
+      let key = '', label = '', sortKey = 0;
+      if (groupBy === 'day') {
+        key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        label = `${d.getDate()} ${meses[d.getMonth()]}`;
+        sortKey = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      } else if (groupBy === 'week') {
+        const w = getWeek(d);
+        key = `${d.getFullYear()}-W${w}`;
+        label = `Sem ${w}`;
+        sortKey = d.getFullYear() * 100 + w;
+      } else {
+        key = `${d.getFullYear()}-${d.getMonth()}`;
+        label = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+        sortKey = d.getFullYear() * 12 + d.getMonth();
+      }
+      const cur = buckets.get(key);
+      if (cur) cur.total += 1;
+      else buckets.set(key, { label, sortKey, total: 1 });
+    }
+    return Array.from(buckets.values()).sort((a, b) => a.sortKey - b.sortKey);
+  }, [cotizacionesFechas, cotPeriodo]);
+
   return (
     <div style={{ background: BG, minHeight: '100vh', color: TEXT, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }}>
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
