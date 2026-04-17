@@ -63,7 +63,7 @@ const Badge = ({ children, color, bg }: { children: React.ReactNode; color: stri
   </span>
 );
 
-type ProductoOpt = { id: string; nombre: string };
+type ProductoOpt = { id: string; nombre: string; codigo_proveedor?: string | null };
 
 const formatFechaCorta = (iso: string) => {
   if (!iso) return '';
