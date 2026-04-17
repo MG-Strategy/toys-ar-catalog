@@ -115,41 +115,57 @@ const Dashboard = () => {
     })();
   }, []);
 
-  // Productos para histórico (id + nombre desde catálogo vigente)
+  // Productos para histórico — cargar TODOS desde vista_catalogo_vigente,
+  // y enriquecer con codigo_proveedor desde vista_historico_precios (vigente).
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from('vista_catalogo_vigente')
-        .select('id, nombre')
-        .order('nombre', { ascending: true });
-      if (data) {
-        const seen = new Set<string>();
-        const opts: ProductoOpt[] = [];
-        for (const r of data as any[]) {
-          if (!r?.id || !r?.nombre) continue;
-          if (seen.has(r.id)) continue;
-          seen.add(r.id);
-          opts.push({ id: r.id, nombre: r.nombre });
+      const [catRes, histRes] = await Promise.all([
+        supabase
+          .from('vista_catalogo_vigente')
+          .select('id, nombre')
+          .order('nombre', { ascending: true }),
+        supabase
+          .from('vista_historico_precios')
+          .select('id_producto, codigo_proveedor')
+          .eq('es_precio_vigente', true),
+      ]);
+      const codigoMap = new Map<string, string | null>();
+      for (const r of (histRes.data as any[]) || []) {
+        if (r?.id_producto && !codigoMap.has(r.id_producto)) {
+          codigoMap.set(r.id_producto, r.codigo_proveedor ?? null);
         }
-        setProductos(opts);
       }
+      const seen = new Set<string>();
+      const opts: ProductoOpt[] = [];
+      for (const r of (catRes.data as any[]) || []) {
+        if (!r?.id || !r?.nombre || seen.has(r.id)) continue;
+        seen.add(r.id);
+        opts.push({ id: r.id, nombre: r.nombre, codigo_proveedor: codigoMap.get(r.id) ?? null });
+      }
+      setProductos(opts);
     })();
   }, []);
 
-  // Histórico precios + stock del producto seleccionado
+  // Histórico precios + stock + margen vigente del producto seleccionado
   useEffect(() => {
     if (!selectedProducto) return;
     (async () => {
-      const [hist, cat] = await Promise.all([
+      const [hist, cat, vigente] = await Promise.all([
         supabase
           .from('vista_historico_precios')
           .select('*')
-          .eq('nombre', selectedProducto.nombre)
+          .eq('id_producto', selectedProducto.id)
           .order('fecha_precio', { ascending: true }),
         supabase
           .from('vista_catalogo_vigente')
           .select('stock')
           .eq('id', selectedProducto.id)
+          .maybeSingle(),
+        supabase
+          .from('vista_historico_precios')
+          .select('margen_porcentaje')
+          .eq('id_producto', selectedProducto.id)
+          .eq('es_precio_vigente', true)
           .maybeSingle(),
       ]);
       if (hist.data) {
@@ -158,9 +174,10 @@ const Dashboard = () => {
           fecha_label: formatFechaCorta(r.fecha_precio),
         }));
         setHistorico(mapped);
-        const last = hist.data[hist.data.length - 1] as any;
-        setMargenActual(last?.margen_porcentaje ?? null);
+      } else {
+        setHistorico([]);
       }
+      setMargenActual((vigente.data as any)?.margen_porcentaje ?? null);
       setStock((cat.data as any)?.stock ?? null);
     })();
   }, [selectedProducto]);
@@ -168,7 +185,11 @@ const Dashboard = () => {
   const filteredProductos = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return productos;
-    return productos.filter((p) => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+    return productos.filter(
+      (p) =>
+        p.nombre.toLowerCase().includes(q) ||
+        (p.codigo_proveedor || '').toLowerCase().includes(q)
+    );
   }, [search, productos]);
 
   const stockBadge = () => {
