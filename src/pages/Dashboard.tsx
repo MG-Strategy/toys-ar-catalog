@@ -63,13 +63,26 @@ const Badge = ({ children, color, bg }: { children: React.ReactNode; color: stri
   </span>
 );
 
+type ProductoOpt = { id: string; nombre: string };
+
+const formatFechaCorta = (iso: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`;
+};
+
 const Dashboard = () => {
   const [kpis, setKpis] = useState<KPIs>({});
   const [estados, setEstados] = useState<{ name: string; value: number }[]>([]);
-  const [productos, setProductos] = useState<string[]>([]);
-  const [selectedProducto, setSelectedProducto] = useState<string>('');
+  const [productos, setProductos] = useState<ProductoOpt[]>([]);
+  const [selectedProducto, setSelectedProducto] = useState<ProductoOpt | null>(null);
+  const [search, setSearch] = useState('');
+  const [showResults, setShowResults] = useState(false);
   const [historico, setHistorico] = useState<any[]>([]);
   const [margenActual, setMargenActual] = useState<number | null>(null);
+  const [stock, setStock] = useState<number | null>(null);
   const [ranking, setRanking] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [reglas, setReglas] = useState<any[]>([]);
@@ -98,35 +111,71 @@ const Dashboard = () => {
     })();
   }, []);
 
-  // Productos para histórico
+  // Productos para histórico (id + nombre desde catálogo vigente)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('vista_historico_precios').select('nombre');
+      const { data } = await supabase
+        .from('vista_catalogo_vigente')
+        .select('id, nombre')
+        .order('nombre', { ascending: true });
       if (data) {
-        const unique = Array.from(new Set(data.map((r: any) => r.nombre).filter(Boolean))).sort();
-        setProductos(unique as string[]);
-        if (unique.length && !selectedProducto) setSelectedProducto(unique[0] as string);
+        const seen = new Set<string>();
+        const opts: ProductoOpt[] = [];
+        for (const r of data as any[]) {
+          if (!r?.id || !r?.nombre) continue;
+          if (seen.has(r.id)) continue;
+          seen.add(r.id);
+          opts.push({ id: r.id, nombre: r.nombre });
+        }
+        setProductos(opts);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Histórico precios del producto seleccionado
+  // Histórico precios + stock del producto seleccionado
   useEffect(() => {
     if (!selectedProducto) return;
     (async () => {
-      const { data } = await supabase
-        .from('vista_historico_precios')
-        .select('*')
-        .eq('nombre', selectedProducto)
-        .order('fecha_precio', { ascending: true });
-      if (data) {
-        setHistorico(data);
-        const last = data[data.length - 1] as any;
+      const [hist, cat] = await Promise.all([
+        supabase
+          .from('vista_historico_precios')
+          .select('*')
+          .eq('nombre', selectedProducto.nombre)
+          .order('fecha_precio', { ascending: true }),
+        supabase
+          .from('vista_catalogo_vigente')
+          .select('stock')
+          .eq('id', selectedProducto.id)
+          .maybeSingle(),
+      ]);
+      if (hist.data) {
+        const mapped = (hist.data as any[]).map((r) => ({
+          ...r,
+          fecha_label: formatFechaCorta(r.fecha_precio),
+        }));
+        setHistorico(mapped);
+        const last = hist.data[hist.data.length - 1] as any;
         setMargenActual(last?.margen_porcentaje ?? null);
       }
+      setStock((cat.data as any)?.stock ?? null);
     })();
   }, [selectedProducto]);
+
+  const filteredProductos = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return productos.slice(0, 20);
+    return productos
+      .filter((p) => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [search, productos]);
+
+  const stockBadge = () => {
+    if (stock == null) return null;
+    if (stock === 0) return <Badge color="#fff" bg="#ef4444">Sin stock</Badge>;
+    if (stock <= 10) return <Badge color="#fff" bg="#f97316">Stock crítico ({stock} unidades)</Badge>;
+    if (stock <= 50) return <Badge color="#0f172a" bg={YELLOW}>Stock bajo ({stock} unidades)</Badge>;
+    return <Badge color="#fff" bg="#16a34a">En stock ({stock} unidades)</Badge>;
+  };
 
   // Ranking productos
   useEffect(() => {
@@ -285,29 +334,54 @@ const Dashboard = () => {
           <Card>
             <SectionTitle>Histórico de precios</SectionTitle>
             <div className="mb-4 flex items-center gap-3 flex-wrap">
-              <select
-                value={selectedProducto}
-                onChange={(e) => setSelectedProducto(e.target.value)}
-                className="px-3 py-2 rounded-lg text-sm"
-                style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
-              >
-                {productos.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
+              <div className="relative" style={{ minWidth: 280 }}>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setShowResults(true); }}
+                  onFocus={() => setShowResults(true)}
+                  onBlur={() => setTimeout(() => setShowResults(false), 150)}
+                  placeholder={selectedProducto?.nombre || 'Buscar por nombre o UUID...'}
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+                />
+                {showResults && filteredProductos.length > 0 && (
+                  <ul
+                    className="absolute z-10 mt-1 w-full max-h-64 overflow-auto rounded-lg text-sm"
+                    style={{ background: CARD, border: `1px solid ${BORDER}` }}
+                  >
+                    {filteredProductos.map((p) => (
+                      <li
+                        key={p.id}
+                        onMouseDown={() => {
+                          setSelectedProducto(p);
+                          setSearch('');
+                          setShowResults(false);
+                        }}
+                        className="px-3 py-2 cursor-pointer hover:opacity-80"
+                        style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}
+                      >
+                        <div>{p.nombre}</div>
+                        <div className="text-[10px]" style={{ color: MUTED }}>{p.id}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               {margenActual != null && (
                 <Badge color="#0f172a" bg={YELLOW}>
                   Margen actual: {Number(margenActual).toFixed(2)}%
                 </Badge>
               )}
+              {stockBadge()}
             </div>
             <div style={{ width: '100%', height: 260 }}>
               <ResponsiveContainer>
                 <LineChart data={historico}>
                   <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
-                  <XAxis dataKey="fecha_precio" stroke={MUTED} tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="fecha_label" stroke={MUTED} tick={{ fontSize: 11 }} />
                   <YAxis stroke={MUTED} tick={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={tooltipStyle} labelFormatter={(l) => String(l)} />
                   <Legend wrapperStyle={{ color: TEXT }} />
                   <Line type="monotone" dataKey="precio_publico" stroke={BLUE} strokeWidth={2} dot={false} name="Precio público" />
                   <Line type="monotone" dataKey="precio_proveedor" stroke={YELLOW} strokeWidth={2} dot={false} name="Precio proveedor" />
