@@ -87,6 +87,10 @@ const Dashboard = () => {
   const [clientes, setClientes] = useState<any[]>([]);
   const [reglas, setReglas] = useState<any[]>([]);
   const [equipo, setEquipo] = useState<any[]>([]);
+  const [showPendientes, setShowPendientes] = useState(false);
+  const [pendientes, setPendientes] = useState<any[]>([]);
+  const [loadingPendientes, setLoadingPendientes] = useState(false);
+  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number }[]>([]);
 
   // KPIs
   useEffect(() => {
