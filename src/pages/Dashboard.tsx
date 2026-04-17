@@ -87,6 +87,10 @@ const Dashboard = () => {
   const [clientes, setClientes] = useState<any[]>([]);
   const [reglas, setReglas] = useState<any[]>([]);
   const [equipo, setEquipo] = useState<any[]>([]);
+  const [showPendientes, setShowPendientes] = useState(false);
+  const [pendientes, setPendientes] = useState<any[]>([]);
+  const [loadingPendientes, setLoadingPendientes] = useState(false);
+  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number }[]>([]);
 
   // KPIs
   useEffect(() => {
@@ -163,10 +167,8 @@ const Dashboard = () => {
 
   const filteredProductos = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return productos.slice(0, 20);
-    return productos
-      .filter((p) => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))
-      .slice(0, 20);
+    if (!q) return productos;
+    return productos.filter((p) => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
   }, [search, productos]);
 
   const stockBadge = () => {
@@ -236,8 +238,45 @@ const Dashboard = () => {
           }))
         );
       }
+  })();
+  }, []);
+
+  // Stock overview — todos los productos con stock
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('vista_catalogo_vigente')
+        .select('id, nombre, stock')
+        .order('nombre', { ascending: true });
+      if (data) {
+        const seen = new Set<string>();
+        const arr: { id: string; nombre: string; stock: number }[] = [];
+        for (const r of data as any[]) {
+          if (!r?.id || seen.has(r.id)) continue;
+          seen.add(r.id);
+          arr.push({ id: r.id, nombre: r.nombre, stock: Number(r.stock ?? 0) });
+        }
+        setStockAll(arr);
+      }
     })();
   }, []);
+
+  // Pendientes (lazy on click)
+  const openPendientes = async () => {
+    setShowPendientes(true);
+    if (pendientes.length > 0) return;
+    setLoadingPendientes(true);
+    let { data, error } = await supabase
+      .from('cotizaciones_globales')
+      .select('*, usuarios(nombre_completo)')
+      .eq('estado', 'pendiente');
+    if (error) {
+      const r = await supabase.from('cotizaciones_globales').select('*').eq('estado', 'pendiente');
+      data = r.data as any;
+    }
+    setPendientes((data as any[]) || []);
+    setLoadingPendientes(false);
+  };
 
   const rolBadge = (rol: string) => {
     const r = (rol || '').toLowerCase();
@@ -282,15 +321,25 @@ const Dashboard = () => {
               {kpis.total_cotizaciones ?? 0}
             </div>
           </Card>
-          <Card className={pendientesAlta ? '' : ''}>
-            <div className="text-sm" style={{ color: MUTED }}>⏳ Pendientes</div>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={openPendientes}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openPendientes(); }}
+            className="rounded-2xl border p-5 cursor-pointer transition hover:opacity-90"
+            style={{ background: CARD, borderColor: BORDER }}
+          >
+            <div className="text-sm flex items-center justify-between" style={{ color: MUTED }}>
+              <span>⏳ Pendientes</span>
+              <span className="text-[10px] uppercase tracking-wide" style={{ color: MUTED }}>ver detalle →</span>
+            </div>
             <div
               className="text-3xl font-bold mt-2"
               style={{ color: pendientesAlta ? YELLOW : TEXT }}
             >
               {kpis.cotizaciones_pendientes ?? 0}
             </div>
-          </Card>
+          </div>
           <Card>
             <div className="text-sm" style={{ color: MUTED }}>💰 Valor total cotizado</div>
             <div className="text-2xl font-bold mt-2" style={{ color: BLUE }}>
@@ -391,7 +440,45 @@ const Dashboard = () => {
           </Card>
         </section>
 
-        {/* SECTION 4 — Ranking productos */}
+        {/* SECTION 3.5 — Estado de stock */}
+        <section>
+          <Card>
+            <SectionTitle>Estado de stock</SectionTitle>
+            {(() => {
+              const sinStock = stockAll.filter((p) => p.stock === 0);
+              const critico = stockAll.filter((p) => p.stock >= 1 && p.stock <= 10);
+              const bajo = stockAll.filter((p) => p.stock >= 11 && p.stock <= 50);
+              const enStock = stockAll.filter((p) => p.stock > 50);
+              const Col = ({ title, items, bg, color }: { title: string; items: typeof stockAll; bg: string; color: string }) => (
+                <div className="rounded-xl p-3" style={{ background: BG, border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-semibold text-sm" style={{ color: TEXT }}>{title}</span>
+                    <Badge color={color} bg={bg}>{items.length}</Badge>
+                  </div>
+                  <ul className="space-y-2 max-h-72 overflow-auto pr-1">
+                    {items.map((p) => (
+                      <li key={p.id} className="flex items-center justify-between gap-2 text-xs" style={{ color: TEXT }}>
+                        <span className="truncate" title={p.nombre}>{p.nombre}</span>
+                        <Badge color={color} bg={bg}>{p.stock}</Badge>
+                      </li>
+                    ))}
+                    {items.length === 0 && (
+                      <li className="text-xs text-center py-2" style={{ color: MUTED }}>—</li>
+                    )}
+                  </ul>
+                </div>
+              );
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Col title="Sin stock" items={sinStock} bg="#ef4444" color="#fff" />
+                  <Col title="Stock crítico" items={critico} bg="#f97316" color="#fff" />
+                  <Col title="Stock bajo" items={bajo} bg={YELLOW} color="#0f172a" />
+                  <Col title="En stock" items={enStock} bg="#16a34a" color="#fff" />
+                </div>
+              );
+            })()}
+          </Card>
+        </section>
         <section>
           <Card>
             <SectionTitle>Ranking de productos más cotizados</SectionTitle>
@@ -504,6 +591,74 @@ const Dashboard = () => {
             </div>
           </Card>
         </section>
+
+
+        {/* Modal Pendientes */}
+        {showPendientes && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)' }}
+            onClick={() => setShowPendientes(false)}
+          >
+            <div
+              className="w-full max-w-4xl rounded-2xl border max-h-[85vh] overflow-hidden flex flex-col"
+              style={{ background: CARD, borderColor: BORDER }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: BORDER }}>
+                <h3 className="text-lg font-semibold" style={{ color: TEXT }}>Cotizaciones pendientes</h3>
+                <button
+                  onClick={() => setShowPendientes(false)}
+                  className="px-3 py-1 rounded-lg text-sm"
+                  style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+                >
+                  Cerrar ✕
+                </button>
+              </div>
+              <div className="overflow-auto p-5">
+                {loadingPendientes ? (
+                  <div className="text-center py-8" style={{ color: MUTED }}>Cargando…</div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
+                        <th className="text-left py-2 px-3">Cliente</th>
+                        <th className="text-left py-2 px-3">Fecha de cotización</th>
+                        <th className="text-right py-2 px-3">Total ARS</th>
+                        <th className="text-left py-2 px-3">Canal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendientes.map((c: any, i) => {
+                        const cliente =
+                          c.usuarios?.nombre_completo ||
+                          c.nombre_completo ||
+                          c.cliente ||
+                          c.nombre_cliente ||
+                          '—';
+                        const fechaIso =
+                          c.fecha_cotizacion || c.fecha_creacion || c.created_at || c.fecha || '';
+                        const total = Number(c.total_ars ?? c.total ?? c.monto_total ?? 0);
+                        const canal = c.canal || c.origen || '—';
+                        return (
+                          <tr key={c.id ?? i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                            <td className="py-2 px-3">{cliente}</td>
+                            <td className="py-2 px-3">{formatFechaCorta(fechaIso)}</td>
+                            <td className="py-2 px-3 text-right font-semibold" style={{ color: BLUE }}>{formatARS(total)}</td>
+                            <td className="py-2 px-3">{canal}</td>
+                          </tr>
+                        );
+                      })}
+                      {pendientes.length === 0 && (
+                        <tr><td colSpan={4} className="py-6 px-3 text-center" style={{ color: MUTED }}>Sin cotizaciones pendientes</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <footer className="text-center text-xs pb-4" style={{ color: MUTED }}>
           JugueteAR · Dashboard interno · acceso solo por URL
