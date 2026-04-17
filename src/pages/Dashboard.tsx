@@ -321,15 +321,25 @@ const Dashboard = () => {
               {kpis.total_cotizaciones ?? 0}
             </div>
           </Card>
-          <Card className={pendientesAlta ? '' : ''}>
-            <div className="text-sm" style={{ color: MUTED }}>⏳ Pendientes</div>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={openPendientes}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openPendientes(); }}
+            className="rounded-2xl border p-5 cursor-pointer transition hover:opacity-90"
+            style={{ background: CARD, borderColor: BORDER }}
+          >
+            <div className="text-sm flex items-center justify-between" style={{ color: MUTED }}>
+              <span>⏳ Pendientes</span>
+              <span className="text-[10px] uppercase tracking-wide" style={{ color: MUTED }}>ver detalle →</span>
+            </div>
             <div
               className="text-3xl font-bold mt-2"
               style={{ color: pendientesAlta ? YELLOW : TEXT }}
             >
               {kpis.cotizaciones_pendientes ?? 0}
             </div>
-          </Card>
+          </div>
           <Card>
             <div className="text-sm" style={{ color: MUTED }}>💰 Valor total cotizado</div>
             <div className="text-2xl font-bold mt-2" style={{ color: BLUE }}>
