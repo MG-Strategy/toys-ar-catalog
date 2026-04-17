@@ -531,6 +531,89 @@ const Dashboard = () => {
           </Card>
         </section>
 
+        {/* SECTION 2.5 — Cotizaciones por día */}
+        <section>
+          <Card>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <SectionTitle>Cotizaciones por día</SectionTitle>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { k: 'bar', label: 'Barras' },
+                  { k: 'line', label: 'Línea' },
+                ] as const).map((b) => {
+                  const active = cotChartType === b.k;
+                  return (
+                    <button
+                      key={b.k}
+                      onClick={() => setCotChartType(b.k)}
+                      className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                      style={{
+                        background: active ? BLUE : BG,
+                        color: active ? '#fff' : TEXT,
+                        border: `1px solid ${active ? BLUE : BORDER}`,
+                      }}
+                    >
+                      {b.label}
+                    </button>
+                  );
+                })}
+                <span className="mx-1" style={{ color: BORDER }}>|</span>
+                {([
+                  { k: '7d', label: '7 días' },
+                  { k: '30d', label: '30 días' },
+                  { k: '3m', label: '3 meses' },
+                  { k: '1y', label: '1 año' },
+                ] as const).map((p) => {
+                  const active = cotPeriodo === p.k;
+                  return (
+                    <button
+                      key={p.k}
+                      onClick={() => setCotPeriodo(p.k)}
+                      className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                      style={{
+                        background: active ? BLUE : BG,
+                        color: active ? '#fff' : TEXT,
+                        border: `1px solid ${active ? BLUE : BORDER}`,
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer>
+                {cotChartType === 'bar' ? (
+                  <BarChart data={cotizacionesData}>
+                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                    <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
+                    <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="total" fill={BLUE} name="Cotizaciones" />
+                  </BarChart>
+                ) : (
+                  <LineChart data={cotizacionesData}>
+                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                    <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
+                    <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
+                      stroke={YELLOW}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: YELLOW, stroke: YELLOW }}
+                      activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                      name="Cotizaciones"
+                    />
+                  </LineChart>
+                )}
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </section>
+
         {/* SECTION 3.5 — Estado de stock */}
         <section>
           <Card>
