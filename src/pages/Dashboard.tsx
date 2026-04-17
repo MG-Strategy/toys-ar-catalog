@@ -342,16 +342,6 @@ const Dashboard = () => {
     []
   );
 
-  const tooltipStyle = useMemo(
-    () => ({
-      background: CARD,
-      border: `1px solid ${BORDER}`,
-      borderRadius: 8,
-      color: TEXT,
-    }),
-    []
-  );
-
   // Cotizaciones agrupadas según período seleccionado
   const cotizacionesData = useMemo(() => {
     const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
