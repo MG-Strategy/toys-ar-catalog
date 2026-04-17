@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatPrice } from '@/lib/formatPrice';
 
 const Cotizar = () => {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
@@ -102,6 +103,8 @@ const Cotizar = () => {
                 <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-semibold">Producto</th>
                   <th className="text-center p-3 font-semibold">Cantidad</th>
+                  <th className="text-right p-3 font-semibold">Precio unit.</th>
+                  <th className="text-right p-3 font-semibold">Subtotal</th>
                   <th className="p-3 w-10"></th>
                 </tr>
               </thead>
@@ -118,6 +121,12 @@ const Cotizar = () => {
                         className="w-16 text-center rounded border border-input bg-background py-1"
                       />
                     </td>
+                    <td className="p-3 text-right font-semibold" style={{ color: '#1565C0' }}>
+                      {formatPrice(item.precio_publico)}
+                    </td>
+                    <td className="p-3 text-right font-bold" style={{ color: '#1565C0' }}>
+                      {formatPrice(item.precio_publico * item.cantidad)}
+                    </td>
                     <td className="p-3">
                       <button onClick={() => removeItem(item.id)} className="text-accent hover:opacity-70">
                         <X className="w-4 h-4" />
@@ -126,9 +135,18 @@ const Cotizar = () => {
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="bg-muted/50">
+                  <td colSpan={3} className="p-3 text-right font-bold text-base">Total</td>
+                  <td className="p-3 text-right font-extrabold text-lg" style={{ color: '#1565C0' }}>
+                    {formatPrice(totalPrice)}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
             </table>
             <div className="p-4 border-t border-border text-center">
-              <p className="text-sm text-muted-foreground font-medium">📩 Recibirás tu presupuesto detallado por email</p>
+              <p className="text-sm text-muted-foreground font-medium italic">* Los precios pueden variar al momento de confirmar</p>
             </div>
           </div>
 
