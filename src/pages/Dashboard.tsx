@@ -93,6 +93,9 @@ const Dashboard = () => {
   const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string }[]>([]);
   const [stockSearch, setStockSearch] = useState('');
   const [stockFilter, setStockFilter] = useState<'todos' | 'sin' | 'critico' | 'bajo' | 'en'>('todos');
+  const [cotizacionesFechas, setCotizacionesFechas] = useState<string[]>([]);
+  const [cotChartType, setCotChartType] = useState<'bar' | 'line'>('bar');
+  const [cotPeriodo, setCotPeriodo] = useState<'7d' | '30d' | '3m' | '1y'>('30d');
 
   // KPIs
   useEffect(() => {
