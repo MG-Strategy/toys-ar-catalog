@@ -334,29 +334,54 @@ const Dashboard = () => {
           <Card>
             <SectionTitle>Histórico de precios</SectionTitle>
             <div className="mb-4 flex items-center gap-3 flex-wrap">
-              <select
-                value={selectedProducto}
-                onChange={(e) => setSelectedProducto(e.target.value)}
-                className="px-3 py-2 rounded-lg text-sm"
-                style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
-              >
-                {productos.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
+              <div className="relative" style={{ minWidth: 280 }}>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setShowResults(true); }}
+                  onFocus={() => setShowResults(true)}
+                  onBlur={() => setTimeout(() => setShowResults(false), 150)}
+                  placeholder={selectedProducto?.nombre || 'Buscar por nombre o UUID...'}
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+                />
+                {showResults && filteredProductos.length > 0 && (
+                  <ul
+                    className="absolute z-10 mt-1 w-full max-h-64 overflow-auto rounded-lg text-sm"
+                    style={{ background: CARD, border: `1px solid ${BORDER}` }}
+                  >
+                    {filteredProductos.map((p) => (
+                      <li
+                        key={p.id}
+                        onMouseDown={() => {
+                          setSelectedProducto(p);
+                          setSearch('');
+                          setShowResults(false);
+                        }}
+                        className="px-3 py-2 cursor-pointer hover:opacity-80"
+                        style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}
+                      >
+                        <div>{p.nombre}</div>
+                        <div className="text-[10px]" style={{ color: MUTED }}>{p.id}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               {margenActual != null && (
                 <Badge color="#0f172a" bg={YELLOW}>
                   Margen actual: {Number(margenActual).toFixed(2)}%
                 </Badge>
               )}
+              {stockBadge()}
             </div>
             <div style={{ width: '100%', height: 260 }}>
               <ResponsiveContainer>
                 <LineChart data={historico}>
                   <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
-                  <XAxis dataKey="fecha_precio" stroke={MUTED} tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="fecha_label" stroke={MUTED} tick={{ fontSize: 11 }} />
                   <YAxis stroke={MUTED} tick={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={tooltipStyle} labelFormatter={(l) => String(l)} />
                   <Legend wrapperStyle={{ color: TEXT }} />
                   <Line type="monotone" dataKey="precio_publico" stroke={BLUE} strokeWidth={2} dot={false} name="Precio público" />
                   <Line type="monotone" dataKey="precio_proveedor" stroke={YELLOW} strokeWidth={2} dot={false} name="Precio proveedor" />
