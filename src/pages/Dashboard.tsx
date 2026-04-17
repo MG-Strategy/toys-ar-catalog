@@ -93,6 +93,9 @@ const Dashboard = () => {
   const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string }[]>([]);
   const [stockSearch, setStockSearch] = useState('');
   const [stockFilter, setStockFilter] = useState<'todos' | 'sin' | 'critico' | 'bajo' | 'en'>('todos');
+  const [cotizacionesFechas, setCotizacionesFechas] = useState<string[]>([]);
+  const [cotChartType, setCotChartType] = useState<'bar' | 'line'>('bar');
+  const [cotPeriodo, setCotPeriodo] = useState<'7d' | '30d' | '3m' | '1y'>('30d');
 
   // KPIs
   useEffect(() => {
@@ -113,6 +116,20 @@ const Dashboard = () => {
           counts[k] = (counts[k] || 0) + 1;
         });
         setEstados(Object.entries(counts).map(([name, value]) => ({ name, value })));
+      }
+    })();
+  }, []);
+
+  // Cotizaciones por día — fechas
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('cotizaciones_globales')
+        .select('fecha_cotizacion');
+      if (data) {
+        setCotizacionesFechas(
+          (data as any[]).map((r) => r.fecha_cotizacion).filter(Boolean)
+        );
       }
     })();
   }, []);
@@ -325,6 +342,53 @@ const Dashboard = () => {
     []
   );
 
+  // Cotizaciones agrupadas según período seleccionado
+  const cotizacionesData = useMemo(() => {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const now = new Date();
+    let from = new Date(now);
+    let groupBy: 'day' | 'week' | 'month' = 'day';
+    if (cotPeriodo === '7d') { from.setDate(now.getDate() - 6); groupBy = 'day'; }
+    else if (cotPeriodo === '30d') { from.setDate(now.getDate() - 29); groupBy = 'day'; }
+    else if (cotPeriodo === '3m') { from.setMonth(now.getMonth() - 3); groupBy = 'week'; }
+    else { from.setFullYear(now.getFullYear() - 1); groupBy = 'month'; }
+    from.setHours(0, 0, 0, 0);
+
+    const getWeek = (d: Date) => {
+      const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = (target.getUTCDay() + 6) % 7;
+      target.setUTCDate(target.getUTCDate() - dayNum + 3);
+      const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+      const diff = (target.getTime() - firstThursday.getTime()) / 86400000;
+      return 1 + Math.round((diff - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+    };
+
+    const buckets = new Map<string, { label: string; sortKey: number; total: number }>();
+    for (const iso of cotizacionesFechas) {
+      const d = new Date(iso);
+      if (isNaN(d.getTime()) || d < from) continue;
+      let key = '', label = '', sortKey = 0;
+      if (groupBy === 'day') {
+        key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        label = `${d.getDate()} ${meses[d.getMonth()]}`;
+        sortKey = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      } else if (groupBy === 'week') {
+        const w = getWeek(d);
+        key = `${d.getFullYear()}-W${w}`;
+        label = `Sem ${w}`;
+        sortKey = d.getFullYear() * 100 + w;
+      } else {
+        key = `${d.getFullYear()}-${d.getMonth()}`;
+        label = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+        sortKey = d.getFullYear() * 12 + d.getMonth();
+      }
+      const cur = buckets.get(key);
+      if (cur) cur.total += 1;
+      else buckets.set(key, { label, sortKey, total: 1 });
+    }
+    return Array.from(buckets.values()).sort((a, b) => a.sortKey - b.sortKey);
+  }, [cotizacionesFechas, cotPeriodo]);
+
   return (
     <div style={{ background: BG, minHeight: '100vh', color: TEXT, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }}>
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
@@ -462,6 +526,89 @@ const Dashboard = () => {
                   <Line type="monotone" dataKey="precio_publico" stroke={BLUE} strokeWidth={2} dot={{ r: 3, fill: BLUE, stroke: BLUE }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Precio público" />
                   <Line type="monotone" dataKey="precio_proveedor" stroke={YELLOW} strokeWidth={2} dot={{ r: 3, fill: YELLOW, stroke: YELLOW }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Precio proveedor" />
                 </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </section>
+
+        {/* SECTION 2.5 — Cotizaciones por día */}
+        <section>
+          <Card>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <SectionTitle>Cotizaciones por día</SectionTitle>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { k: 'bar', label: 'Barras' },
+                  { k: 'line', label: 'Línea' },
+                ] as const).map((b) => {
+                  const active = cotChartType === b.k;
+                  return (
+                    <button
+                      key={b.k}
+                      onClick={() => setCotChartType(b.k)}
+                      className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                      style={{
+                        background: active ? BLUE : BG,
+                        color: active ? '#fff' : TEXT,
+                        border: `1px solid ${active ? BLUE : BORDER}`,
+                      }}
+                    >
+                      {b.label}
+                    </button>
+                  );
+                })}
+                <span className="mx-1" style={{ color: BORDER }}>|</span>
+                {([
+                  { k: '7d', label: '7 días' },
+                  { k: '30d', label: '30 días' },
+                  { k: '3m', label: '3 meses' },
+                  { k: '1y', label: '1 año' },
+                ] as const).map((p) => {
+                  const active = cotPeriodo === p.k;
+                  return (
+                    <button
+                      key={p.k}
+                      onClick={() => setCotPeriodo(p.k)}
+                      className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                      style={{
+                        background: active ? BLUE : BG,
+                        color: active ? '#fff' : TEXT,
+                        border: `1px solid ${active ? BLUE : BORDER}`,
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer>
+                {cotChartType === 'bar' ? (
+                  <BarChart data={cotizacionesData}>
+                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                    <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
+                    <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="total" fill={BLUE} name="Cotizaciones" />
+                  </BarChart>
+                ) : (
+                  <LineChart data={cotizacionesData}>
+                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                    <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
+                    <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
+                      stroke={YELLOW}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: YELLOW, stroke: YELLOW }}
+                      activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                      name="Cotizaciones"
+                    />
+                  </LineChart>
+                )}
               </ResponsiveContainer>
             </div>
           </Card>
