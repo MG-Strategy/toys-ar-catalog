@@ -143,6 +143,8 @@ const Dashboard = () => {
         opts.push({ id: r.id, nombre: r.nombre, codigo_proveedor: codigoMap.get(r.id) ?? null });
       }
       setProductos(opts);
+      setShowResults(true);
+      setSelectedProducto((current) => current ?? opts[0] ?? null);
     })();
   }, []);
 
