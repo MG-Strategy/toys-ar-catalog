@@ -949,13 +949,22 @@ const Dashboard = () => {
             >
               <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: BORDER }}>
                 <h3 className="text-lg font-semibold" style={{ color: TEXT }}>Cotizaciones pendientes</h3>
-                <button
-                  onClick={() => setShowPendientes(false)}
-                  className="px-3 py-1 rounded-lg text-sm"
-                  style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
-                >
-                  Cerrar ✕
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={exportPendientes}
+                    disabled={pendientes.length === 0}
+                    style={{ ...exportBtnStyle, opacity: pendientes.length === 0 ? 0.5 : 1 }}
+                  >
+                    ↓ Exportar CSV
+                  </button>
+                  <button
+                    onClick={() => setShowPendientes(false)}
+                    className="px-3 py-1 rounded-lg text-sm"
+                    style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+                  >
+                    Cerrar ✕
+                  </button>
+                </div>
               </div>
               <div className="overflow-auto p-5">
                 {loadingPendientes ? (
