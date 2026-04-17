@@ -437,6 +437,7 @@ const Dashboard = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </Card>
         </section>
 
         {/* SECTION 3.5 — Estado de stock */}
