@@ -725,7 +725,7 @@ const Dashboard = () => {
         {/* SECTION 3.5 — Estado de stock */}
         <section>
           <Card>
-            <SectionTitle>Estado de stock</SectionTitle>{/*HEADER_PLACEHOLDER*/}
+            
             {(() => {
               const getEstado = (s: number) => {
                 if (s === 0) return { key: 'sin', label: 'Sin stock', bg: '#ef4444', color: '#fff' };
@@ -749,6 +749,16 @@ const Dashboard = () => {
               ];
               return (
                 <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
+                    <SectionTitle>Estado de stock</SectionTitle>
+                    <button
+                      onClick={() => exportStock(filtered)}
+                      disabled={filtered.length === 0}
+                      style={{ ...exportBtnStyle, opacity: filtered.length === 0 ? 0.5 : 1 }}
+                    >
+                      ↓ Exportar CSV
+                    </button>
+                  </div>
                   <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                     <input
                       type="text"
