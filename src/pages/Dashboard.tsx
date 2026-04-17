@@ -134,7 +134,7 @@ const Dashboard = () => {
   const [showPendientes, setShowPendientes] = useState(false);
   const [pendientes, setPendientes] = useState<any[]>([]);
   const [loadingPendientes, setLoadingPendientes] = useState(false);
-  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string }[]>([]);
+  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string }[]>([]);
   const [stockSearch, setStockSearch] = useState('');
   const [stockFilter, setStockFilter] = useState<'todos' | 'sin' | 'critico' | 'bajo' | 'en'>('todos');
   const [cotizacionesFechas, setCotizacionesFechas] = useState<string[]>([]);
@@ -332,15 +332,22 @@ const Dashboard = () => {
     (async () => {
       const { data } = await supabase
         .from('vista_catalogo_vigente')
-        .select('id, nombre, stock, proveedor')
+        .select('id, nombre, stock, proveedor, categoria, marca')
         .order('nombre', { ascending: true });
       if (data) {
         const seen = new Set<string>();
-        const arr: { id: string; nombre: string; stock: number; proveedor: string }[] = [];
+        const arr: { id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string }[] = [];
         for (const r of data as any[]) {
           if (!r?.id || seen.has(r.id)) continue;
           seen.add(r.id);
-          arr.push({ id: r.id, nombre: r.nombre, stock: Number(r.stock ?? 0), proveedor: r.proveedor ?? '—' });
+          arr.push({
+            id: r.id,
+            nombre: r.nombre,
+            stock: Number(r.stock ?? 0),
+            proveedor: r.proveedor ?? '—',
+            categoria: r.categoria ?? '—',
+            marca: r.marca ?? '—',
+          });
         }
         setStockAll(arr);
       }
