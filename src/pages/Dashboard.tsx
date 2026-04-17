@@ -238,10 +238,45 @@ const Dashboard = () => {
           }))
         );
       }
+  })();
+  }, []);
+
+  // Stock overview — todos los productos con stock
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('vista_catalogo_vigente')
+        .select('id, nombre, stock')
+        .order('nombre', { ascending: true });
+      if (data) {
+        const seen = new Set<string>();
+        const arr: { id: string; nombre: string; stock: number }[] = [];
+        for (const r of data as any[]) {
+          if (!r?.id || seen.has(r.id)) continue;
+          seen.add(r.id);
+          arr.push({ id: r.id, nombre: r.nombre, stock: Number(r.stock ?? 0) });
+        }
+        setStockAll(arr);
+      }
     })();
   }, []);
 
-  const rolBadge = (rol: string) => {
+  // Pendientes (lazy on click)
+  const openPendientes = async () => {
+    setShowPendientes(true);
+    if (pendientes.length > 0) return;
+    setLoadingPendientes(true);
+    let { data, error } = await supabase
+      .from('cotizaciones_globales')
+      .select('*, usuarios(nombre_completo)')
+      .eq('estado', 'pendiente');
+    if (error) {
+      const r = await supabase.from('cotizaciones_globales').select('*').eq('estado', 'pendiente');
+      data = r.data as any;
+    }
+    setPendientes((data as any[]) || []);
+    setLoadingPendientes(false);
+  };
     const r = (rol || '').toLowerCase();
     if (r === 'admin') return <Badge color="#fff" bg={BLUE}>{rol}</Badge>;
     if (r === 'operador') return <Badge color="#0f172a" bg={YELLOW}>{rol}</Badge>;
