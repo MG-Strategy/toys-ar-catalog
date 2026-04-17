@@ -457,8 +457,8 @@ const Dashboard = () => {
                   <YAxis stroke={MUTED} tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={tooltipStyle} labelFormatter={(l) => String(l)} />
                   <Legend wrapperStyle={{ color: TEXT }} />
-                  <Line type="monotone" dataKey="precio_publico" stroke={BLUE} strokeWidth={2} dot={false} name="Precio público" />
-                  <Line type="monotone" dataKey="precio_proveedor" stroke={YELLOW} strokeWidth={2} dot={false} name="Precio proveedor" />
+                  <Line type="monotone" dataKey="precio_publico" stroke={BLUE} strokeWidth={2} dot={{ r: 3, fill: BLUE, stroke: BLUE }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Precio público" />
+                  <Line type="monotone" dataKey="precio_proveedor" stroke={YELLOW} strokeWidth={2} dot={{ r: 3, fill: YELLOW, stroke: YELLOW }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Precio proveedor" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
