@@ -8,6 +8,7 @@ import FloatingChatButton from "@/components/FloatingChatButton";
 import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
 import Cotizar from "./pages/Cotizar";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/catalogo" element={<Catalogo />} />
             <Route path="/cotizar" element={<Cotizar />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <FloatingChatButton />
