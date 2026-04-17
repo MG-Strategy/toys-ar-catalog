@@ -361,7 +361,7 @@ const Dashboard = () => {
     setLoadingPendientes(true);
     let { data, error } = await supabase
       .from('cotizaciones_globales')
-      .select('*, usuarios(nombre_completo)')
+      .select('*, usuarios(nombre_completo, email)')
       .eq('estado', 'pendiente');
     if (error) {
       const r = await supabase.from('cotizaciones_globales').select('*').eq('estado', 'pendiente');
