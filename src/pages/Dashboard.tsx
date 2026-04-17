@@ -437,10 +437,47 @@ const Dashboard = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </Card>
         </section>
 
-        {/* SECTION 4 — Ranking productos */}
+        {/* SECTION 3.5 — Estado de stock */}
+        <section>
+          <Card>
+            <SectionTitle>Estado de stock</SectionTitle>
+            {(() => {
+              const sinStock = stockAll.filter((p) => p.stock === 0);
+              const critico = stockAll.filter((p) => p.stock >= 1 && p.stock <= 10);
+              const bajo = stockAll.filter((p) => p.stock >= 11 && p.stock <= 50);
+              const enStock = stockAll.filter((p) => p.stock > 50);
+              const Col = ({ title, items, bg, color }: { title: string; items: typeof stockAll; bg: string; color: string }) => (
+                <div className="rounded-xl p-3" style={{ background: BG, border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-semibold text-sm" style={{ color: TEXT }}>{title}</span>
+                    <Badge color={color} bg={bg}>{items.length}</Badge>
+                  </div>
+                  <ul className="space-y-2 max-h-72 overflow-auto pr-1">
+                    {items.map((p) => (
+                      <li key={p.id} className="flex items-center justify-between gap-2 text-xs" style={{ color: TEXT }}>
+                        <span className="truncate" title={p.nombre}>{p.nombre}</span>
+                        <Badge color={color} bg={bg}>{p.stock}</Badge>
+                      </li>
+                    ))}
+                    {items.length === 0 && (
+                      <li className="text-xs text-center py-2" style={{ color: MUTED }}>—</li>
+                    )}
+                  </ul>
+                </div>
+              );
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Col title="Sin stock" items={sinStock} bg="#ef4444" color="#fff" />
+                  <Col title="Stock crítico" items={critico} bg="#f97316" color="#fff" />
+                  <Col title="Stock bajo" items={bajo} bg={YELLOW} color="#0f172a" />
+                  <Col title="En stock" items={enStock} bg="#16a34a" color="#fff" />
+                </div>
+              );
+            })()}
+          </Card>
+        </section>
         <section>
           <Card>
             <SectionTitle>Ranking de productos más cotizados</SectionTitle>
