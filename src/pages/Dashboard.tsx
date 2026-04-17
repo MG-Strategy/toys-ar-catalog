@@ -175,14 +175,15 @@ const Dashboard = () => {
     (async () => {
       const { data } = await supabase
         .from('usuarios_dashboard')
-        .select('nombre_completo, email, activo, roles_dashboard(nombre_rol)');
+        .select('nombre_completo, email, activo, roles_dashboard(rol)')
+        .eq('activo', true);
       if (data) {
         setEquipo(
           (data as any[]).map((u) => ({
             nombre_completo: u.nombre_completo,
             email: u.email,
             activo: u.activo,
-            rol: u.roles_dashboard?.nombre_rol ?? '—',
+            rol: u.roles_dashboard?.rol ?? '—',
           }))
         );
       }
