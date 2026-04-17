@@ -120,6 +120,20 @@ const Dashboard = () => {
     })();
   }, []);
 
+  // Cotizaciones por día — fechas
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('cotizaciones_globales')
+        .select('fecha_cotizacion');
+      if (data) {
+        setCotizacionesFechas(
+          (data as any[]).map((r) => r.fecha_cotizacion).filter(Boolean)
+        );
+      }
+    })();
+  }, []);
+
   // Productos para histórico — cargar TODOS desde vista_catalogo_vigente,
   // y enriquecer con codigo_proveedor desde vista_historico_precios (vigente).
   useEffect(() => {
