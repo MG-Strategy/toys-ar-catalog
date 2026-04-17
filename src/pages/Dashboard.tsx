@@ -63,13 +63,26 @@ const Badge = ({ children, color, bg }: { children: React.ReactNode; color: stri
   </span>
 );
 
+type ProductoOpt = { id: string; nombre: string };
+
+const formatFechaCorta = (iso: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`;
+};
+
 const Dashboard = () => {
   const [kpis, setKpis] = useState<KPIs>({});
   const [estados, setEstados] = useState<{ name: string; value: number }[]>([]);
-  const [productos, setProductos] = useState<string[]>([]);
-  const [selectedProducto, setSelectedProducto] = useState<string>('');
+  const [productos, setProductos] = useState<ProductoOpt[]>([]);
+  const [selectedProducto, setSelectedProducto] = useState<ProductoOpt | null>(null);
+  const [search, setSearch] = useState('');
+  const [showResults, setShowResults] = useState(false);
   const [historico, setHistorico] = useState<any[]>([]);
   const [margenActual, setMargenActual] = useState<number | null>(null);
+  const [stock, setStock] = useState<number | null>(null);
   const [ranking, setRanking] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [reglas, setReglas] = useState<any[]>([]);
