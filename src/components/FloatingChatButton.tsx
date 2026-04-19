@@ -185,13 +185,10 @@ const FloatingChatButton = () => {
             {flowDone && !isTyping && (
               <div className="flex justify-start mt-2">
                 <div className="bg-white border border-[#e0e0e0] rounded-2xl rounded-tl-sm p-3.5 max-w-[88%]">
-                  <p className="text-[13px] text-[#555] mb-3">¡Tu cotización está lista! ¿Qué querés hacer?</p>
+                  <p className="text-[13px] text-[#555] mb-3">¡Tu cotización está lista! En breve se enviará por correo...</p>
                   <div className="flex flex-col gap-2">
                     <button onClick={() => handleAction('download')} className="bg-[#1565C0] text-white py-2.5 px-4 rounded-xl text-[13.5px] font-bold transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-2">
                       ⬇ Descargar cotización
-                    </button>
-                    <button onClick={() => handleAction('email')} className="bg-[#E8F0FE] text-[#1565C0] border-[1.5px] border-[#1565C0] py-2.5 px-4 rounded-xl text-[13.5px] font-bold transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-2">
-                      ✉ Enviar por correo
                     </button>
                   </div>
                 </div>
