@@ -73,21 +73,37 @@ const FloatingChatButton = () => {
   };
 
   const handleAction = async (action: 'download' | 'email') => {
-    setFlowDone(true);
     setIsTyping(true);
-    
-    try {
-      const res = await fetch(CONFIG.WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, action, payload: flowPayload }),
-      });
-      const data = await res.json().catch(() => ({}));
 
-      if (action === 'download' && (data.pdf_url || flowPayload?.pdf_url)) {
-        window.open(data.pdf_url || flowPayload.pdf_url, '_blank');
+    try {
+      if (action === 'download') {
+        const cotizacionId = flowPayload?.cotizacion_id;
+        if (!cotizacionId) {
+          addMessage('bot', 'No encontré el ID de la cotización. Por favor intentá de nuevo.');
+          setIsTyping(false);
+          return;
+        }
+
+        const res = await fetch('https://g4bn4t-n8n.duckdns.org/webhook/0f08bf8b-259c-4ba7-9502-a372878e220c', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cotizacion_id: cotizacionId }),
+        });
+
+        if (!res.ok) throw new Error('Error al generar el PDF');
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cotizacion_${cotizacionId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       }
 
+      setFlowDone(true);
       addMessage('bot', action === 'download'
         ? '✅ Tu cotización se está descargando. ¡Gracias por elegirnos! 🎉'
         : '✅ ¡Listo! Enviamos la cotización a tu correo. Revisá tu bandeja 📬');
