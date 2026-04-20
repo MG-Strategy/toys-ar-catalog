@@ -559,27 +559,26 @@ const Dashboard = () => {
         {/* SECTION 2 + 3 */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card>
-            <SectionTitle>Cotizaciones por estado</SectionTitle>
-            <div style={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={estados}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                  >
-                    {estados.map((e, i) => (
-                      <Cell key={i} fill={STATE_COLORS[e.name] || '#64748b'} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend wrapperStyle={{ color: TEXT }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <SectionTitle>Cotizaciones por canal</SectionTitle>
+            {errors.canales ? (
+              <ErrorMsg />
+            ) : (
+              <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                  <BarChart data={canales} margin={{ top: 24, right: 16, left: 0, bottom: 8 }}>
+                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                    <XAxis dataKey="name" stroke={MUTED} />
+                    <YAxis stroke={MUTED} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: TEXT, fontSize: 12, fontWeight: 700 }}>
+                      {canales.map((c, i) => (
+                        <Cell key={i} fill={c.name?.toLowerCase() === 'web' ? BLUE : c.name?.toLowerCase() === 'chatbot' ? YELLOW : '#64748b'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </Card>
 
           <Card>
