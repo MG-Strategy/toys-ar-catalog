@@ -581,7 +581,7 @@ const Dashboard = () => {
                     <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
                     <XAxis dataKey="name" stroke={MUTED} />
                     <YAxis stroke={MUTED} allowDecimals={false} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} formatter={(v: any) => [v, 'Cantidad']} />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: TEXT, fontSize: 12, fontWeight: 700 }}>
                       {canales.map((c, i) => (
                         <Cell key={i} fill={c.name?.toLowerCase() === 'web' ? BLUE : c.name?.toLowerCase() === 'chatbot' ? YELLOW : '#64748b'} />
