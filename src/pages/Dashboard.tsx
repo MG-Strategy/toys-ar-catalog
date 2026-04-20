@@ -995,7 +995,9 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="overflow-auto p-5">
-                {loadingPendientes ? (
+                {errors.pendientes ? (
+                  <ErrorMsg />
+                ) : loadingPendientes ? (
                   <div className="text-center py-8" style={{ color: MUTED }}>Cargando…</div>
                 ) : (
                   <table className="w-full text-sm">
