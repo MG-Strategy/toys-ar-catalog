@@ -85,7 +85,7 @@ const FloatingChatButton = () => {
           return;
         }
 
-        const res = await fetch("https://g4bn4t-n8n.duckdns.org/webhook/descargar_cotizacion?id=${cotizacionId}", {
+        const res = await fetch(`https://g4bn4t-n8n.duckdns.org/webhook/descargar_cotizacion?id=${cotizacionId}`, {
           method: "GET",
           //headers: { "Content-Type": "application/json" },
           //body: JSON.stringify({ cotizacion_id: cotizacionId }),
