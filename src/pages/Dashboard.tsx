@@ -165,13 +165,17 @@ const Dashboard = () => {
       const { data, error } = await supabase.from('cotizaciones_globales').select('canal');
       if (error) { setErr('canales', true); return; }
       if (data) {
-        const counts: Record<string, number> = {};
+        const counts: Record<string, number> = { web: 0, chatbot: 0 };
         data.forEach((r: any) => {
-          const k = (r.canal || '').toString().trim();
-          if (!k) return;
-          counts[k] = (counts[k] || 0) + 1;
+          const raw = (r.canal || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+          if (raw === 'chatbot') counts.chatbot += 1;
+          else if (raw === 'web') counts.web += 1;
         });
-        setCanales(Object.entries(counts).map(([name, value]) => ({ name, value })));
+        setCanales(
+          (['web', 'chatbot'] as const)
+            .filter((k) => counts[k] > 0)
+            .map((k) => ({ name: k, value: counts[k] }))
+        );
       }
     })();
   }, []);
