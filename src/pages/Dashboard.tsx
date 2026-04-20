@@ -54,6 +54,12 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-lg font-semibold mb-4" style={{ color: TEXT }}>{children}</h2>
 );
 
+const ErrorMsg = () => (
+  <p className="text-center py-6 text-sm" style={{ color: '#f97316' }}>
+    ⚠️ Error al cargar los datos. Intentá recargar.
+  </p>
+);
+
 const Badge = ({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) => (
   <span
     className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
@@ -379,8 +385,10 @@ const Dashboard = () => {
       .eq('estado', 'pendiente');
     if (error) {
       const r = await supabase.from('cotizaciones_globales').select('*').eq('estado', 'pendiente');
+      if (r.error) { setErr('pendientes', true); setLoadingPendientes(false); return; }
       data = r.data as any;
     }
+    setErr('pendientes', false);
     setPendientes((data as any[]) || []);
     setLoadingPendientes(false);
   };
