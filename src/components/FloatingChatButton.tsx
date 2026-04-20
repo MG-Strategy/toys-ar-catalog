@@ -80,7 +80,7 @@ const FloatingChatButton = () => {
       if (action === "download") {
         const cotizacionId = flowPayload?.cotizacion_id;
         if (!cotizacionId) {
-          addMessage("bot", "No encontré el ID de la cotización. Por favor intentá de nuevo.");
+          addMessage("bot", "No es posible descarga la cotización en este momento. Intenta más tarde.");
           setIsTyping(false);
           return;
         }
