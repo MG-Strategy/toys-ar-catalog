@@ -165,13 +165,17 @@ const Dashboard = () => {
       const { data, error } = await supabase.from('cotizaciones_globales').select('canal');
       if (error) { setErr('canales', true); return; }
       if (data) {
-        const counts: Record<string, number> = {};
+        const counts: Record<string, number> = { web: 0, chatbot: 0 };
         data.forEach((r: any) => {
-          const k = (r.canal || '').toString().trim();
-          if (!k) return;
-          counts[k] = (counts[k] || 0) + 1;
+          const raw = (r.canal || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+          if (raw === 'chatbot') counts.chatbot += 1;
+          else if (raw === 'web') counts.web += 1;
         });
-        setCanales(Object.entries(counts).map(([name, value]) => ({ name, value })));
+        setCanales(
+          (['web', 'chatbot'] as const)
+            .filter((k) => counts[k] > 0)
+            .map((k) => ({ name: k, value: counts[k] }))
+        );
       }
     })();
   }, []);
@@ -577,7 +581,7 @@ const Dashboard = () => {
                     <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
                     <XAxis dataKey="name" stroke={MUTED} />
                     <YAxis stroke={MUTED} allowDecimals={false} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} formatter={(v: any) => [v, 'Cantidad']} />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: TEXT, fontSize: 12, fontWeight: 700 }}>
                       {canales.map((c, i) => (
                         <Cell key={i} fill={c.name?.toLowerCase() === 'web' ? BLUE : c.name?.toLowerCase() === 'chatbot' ? YELLOW : '#64748b'} />
