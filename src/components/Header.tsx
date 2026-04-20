@@ -1,10 +1,12 @@
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Home } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const { totalItems } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const onCatalogo = location.pathname === '/catalogo';
 
   return (
     <header className="sticky top-0 z-50 bg-card shadow-md">
