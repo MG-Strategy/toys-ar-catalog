@@ -592,6 +592,7 @@ const Dashboard = () => {
           <Card>
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Histórico de precios</SectionTitle>
+              {errors.historico && <ErrorMsg />}
               <button
                 onClick={exportHistorico}
                 disabled={!selectedProducto || historico.length === 0}
@@ -664,7 +665,8 @@ const Dashboard = () => {
         <section>
           <Card>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <SectionTitle>Cotizaciones por día</SectionTitle>
+                <SectionTitle>Cotizaciones por día</SectionTitle>
+                {errors.cotizaciones && <ErrorMsg />}
               <div className="flex flex-wrap gap-2">
                 {([
                   { k: 'bar', label: 'Barras' },
@@ -772,6 +774,7 @@ const Dashboard = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
                     <SectionTitle>Estado de stock</SectionTitle>
+                    {errors.stockAll && <ErrorMsg />}
                     <button
                       onClick={() => exportStock(filtered)}
                       disabled={filtered.length === 0}
@@ -845,6 +848,7 @@ const Dashboard = () => {
         <section>
           <Card>
             <SectionTitle>Ranking de productos más cotizados</SectionTitle>
+            {errors.ranking && <ErrorMsg />}
             <div style={{ width: '100%', height: Math.max(320, ranking.length * 36) }}>
               <ResponsiveContainer>
                 <BarChart data={ranking} layout="vertical" margin={{ left: 40, right: 30 }}>
@@ -865,6 +869,7 @@ const Dashboard = () => {
         <section>
           <Card>
             <SectionTitle>Clientes frecuentes</SectionTitle>
+            {errors.clientes && <ErrorMsg />}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -893,6 +898,7 @@ const Dashboard = () => {
         <section>
           <Card>
             <SectionTitle>Reglas de negocio vigentes</SectionTitle>
+            {errors.reglas && <ErrorMsg />}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -927,6 +933,7 @@ const Dashboard = () => {
         <section>
           <Card>
             <SectionTitle>Equipo con acceso al sistema</SectionTitle>
+            {errors.equipo && <ErrorMsg />}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
