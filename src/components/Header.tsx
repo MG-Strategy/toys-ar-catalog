@@ -1,10 +1,12 @@
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Home } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const { totalItems } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const onCatalogo = location.pathname === '/catalogo';
 
   return (
     <header className="sticky top-0 z-50 bg-card shadow-md">
@@ -16,11 +18,19 @@ const Header = () => {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/catalogo')}
-            className="hidden sm:inline-flex px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity"
+            onClick={() => navigate('/')}
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-secondary text-secondary-foreground text-sm font-bold hover:opacity-90 transition-opacity"
           >
-            Ver catálogo
+            <Home className="w-4 h-4" /> Inicio
           </button>
+          {!onCatalogo && (
+            <button
+              onClick={() => navigate('/catalogo')}
+              className="hidden sm:inline-flex px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity"
+            >
+              Ver catálogo
+            </button>
+          )}
           <button
             onClick={() => navigate('/cotizar')}
             className="relative p-2 rounded-full bg-secondary text-secondary-foreground hover:opacity-90 transition-opacity"

@@ -54,6 +54,12 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-lg font-semibold mb-4" style={{ color: TEXT }}>{children}</h2>
 );
 
+const ErrorMsg = () => (
+  <p className="text-center py-6 text-sm" style={{ color: '#f97316' }}>
+    ⚠️ Error al cargar los datos. Intentá recargar.
+  </p>
+);
+
 const Badge = ({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) => (
   <span
     className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
@@ -120,6 +126,9 @@ const exportBtnStyle: React.CSSProperties = {
 const Dashboard = () => {
   const [kpis, setKpis] = useState<KPIs>({});
   const [estados, setEstados] = useState<{ name: string; value: number }[]>([]);
+  const [canales, setCanales] = useState<{ name: string; value: number }[]>([]);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const setErr = (k: string, v: boolean) => setErrors((e) => ({ ...e, [k]: v }));
   const [productos, setProductos] = useState<ProductoOpt[]>([]);
   const [selectedProducto, setSelectedProducto] = useState<ProductoOpt | null>(null);
   const [search, setSearch] = useState('');
@@ -144,22 +153,25 @@ const Dashboard = () => {
   // KPIs
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('vista_dashboard_kpis').select('*').limit(1).maybeSingle();
+      const { data, error } = await supabase.from('vista_dashboard_kpis').select('*').limit(1).maybeSingle();
+      if (error) { setErr('kpis', true); return; }
       if (data) setKpis(data as any);
     })();
   }, []);
 
-  // Estados donut
+  // Cotizaciones por canal (bar)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('cotizaciones_globales').select('estado');
+      const { data, error } = await supabase.from('cotizaciones_globales').select('canal');
+      if (error) { setErr('canales', true); return; }
       if (data) {
         const counts: Record<string, number> = {};
         data.forEach((r: any) => {
-          const k = r.estado || 'desconocido';
+          const k = (r.canal || '').toString().trim();
+          if (!k) return;
           counts[k] = (counts[k] || 0) + 1;
         });
-        setEstados(Object.entries(counts).map(([name, value]) => ({ name, value })));
+        setCanales(Object.entries(counts).map(([name, value]) => ({ name, value })));
       }
     })();
   }, []);
@@ -167,9 +179,10 @@ const Dashboard = () => {
   // Cotizaciones por día — fechas
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('cotizaciones_globales')
         .select('fecha_cotizacion');
+      if (error) { setErr('cotizaciones', true); return; }
       if (data) {
         setCotizacionesFechas(
           (data as any[]).map((r) => r.fecha_cotizacion).filter(Boolean)
@@ -233,6 +246,8 @@ const Dashboard = () => {
           .eq('es_precio_vigente', true)
           .maybeSingle(),
       ]);
+      if (hist.error || cat.error || vigente.error) { setErr('historico', true); return; }
+      setErr('historico', false);
       if (hist.data) {
         const mapped = (hist.data as any[]).map((r) => ({
           ...r,
@@ -268,11 +283,12 @@ const Dashboard = () => {
   // Ranking productos
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('vista_ranking_productos')
         .select('*')
         .order('veces_cotizado', { ascending: false })
         .limit(10);
+      if (error) { setErr('ranking', true); return; }
       if (data) setRanking(data);
     })();
   }, []);
@@ -280,10 +296,11 @@ const Dashboard = () => {
   // Clientes frecuentes (desde misma vista)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('vista_ranking_productos')
         .select('cliente_frecuente, total_cotizaciones_cliente')
         .order('total_cotizaciones_cliente', { ascending: false });
+      if (error) { setErr('clientes', true); return; }
       if (data) {
         const seen = new Set<string>();
         const dedup: any[] = [];
@@ -302,7 +319,8 @@ const Dashboard = () => {
   // Reglas
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('reglas_negocio').select('*');
+      const { data, error } = await supabase.from('reglas_negocio').select('*');
+      if (error) { setErr('reglas', true); return; }
       if (data) setReglas(data);
     })();
   }, []);
@@ -310,10 +328,11 @@ const Dashboard = () => {
   // Equipo
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('usuarios_dashboard')
         .select('nombre_completo, email, activo, roles_dashboard(rol)')
         .eq('activo', true);
+      if (error) { setErr('equipo', true); return; }
       if (data) {
         setEquipo(
           (data as any[]).map((u) => ({
@@ -330,10 +349,11 @@ const Dashboard = () => {
   // Stock overview — todos los productos con stock
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('vista_catalogo_vigente')
         .select('id, nombre, stock, proveedor, categoria, marca')
         .order('nombre', { ascending: true });
+      if (error) { setErr('stockAll', true); return; }
       if (data) {
         const seen = new Set<string>();
         const arr: { id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string }[] = [];
@@ -365,8 +385,10 @@ const Dashboard = () => {
       .eq('estado', 'pendiente');
     if (error) {
       const r = await supabase.from('cotizaciones_globales').select('*').eq('estado', 'pendiente');
+      if (r.error) { setErr('pendientes', true); setLoadingPendientes(false); return; }
       data = r.data as any;
     }
+    setErr('pendientes', false);
     setPendientes((data as any[]) || []);
     setLoadingPendientes(false);
   };
@@ -545,32 +567,32 @@ const Dashboard = () => {
         {/* SECTION 2 + 3 */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card>
-            <SectionTitle>Cotizaciones por estado</SectionTitle>
-            <div style={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={estados}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                  >
-                    {estados.map((e, i) => (
-                      <Cell key={i} fill={STATE_COLORS[e.name] || '#64748b'} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend wrapperStyle={{ color: TEXT }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <SectionTitle>Cotizaciones por canal</SectionTitle>
+            {errors.canales ? (
+              <ErrorMsg />
+            ) : (
+              <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                  <BarChart data={canales} margin={{ top: 24, right: 16, left: 0, bottom: 8 }}>
+                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                    <XAxis dataKey="name" stroke={MUTED} />
+                    <YAxis stroke={MUTED} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: TEXT, fontSize: 12, fontWeight: 700 }}>
+                      {canales.map((c, i) => (
+                        <Cell key={i} fill={c.name?.toLowerCase() === 'web' ? BLUE : c.name?.toLowerCase() === 'chatbot' ? YELLOW : '#64748b'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </Card>
 
           <Card>
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Histórico de precios</SectionTitle>
+              {errors.historico && <ErrorMsg />}
               <button
                 onClick={exportHistorico}
                 disabled={!selectedProducto || historico.length === 0}
@@ -643,7 +665,8 @@ const Dashboard = () => {
         <section>
           <Card>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <SectionTitle>Cotizaciones por día</SectionTitle>
+                <SectionTitle>Cotizaciones por día</SectionTitle>
+                {errors.cotizaciones && <ErrorMsg />}
               <div className="flex flex-wrap gap-2">
                 {([
                   { k: 'bar', label: 'Barras' },
@@ -751,6 +774,7 @@ const Dashboard = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
                     <SectionTitle>Estado de stock</SectionTitle>
+                    {errors.stockAll && <ErrorMsg />}
                     <button
                       onClick={() => exportStock(filtered)}
                       disabled={filtered.length === 0}
@@ -824,6 +848,7 @@ const Dashboard = () => {
         <section>
           <Card>
             <SectionTitle>Ranking de productos más cotizados</SectionTitle>
+            {errors.ranking && <ErrorMsg />}
             <div style={{ width: '100%', height: Math.max(320, ranking.length * 36) }}>
               <ResponsiveContainer>
                 <BarChart data={ranking} layout="vertical" margin={{ left: 40, right: 30 }}>
@@ -844,6 +869,7 @@ const Dashboard = () => {
         <section>
           <Card>
             <SectionTitle>Clientes frecuentes</SectionTitle>
+            {errors.clientes && <ErrorMsg />}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -872,6 +898,7 @@ const Dashboard = () => {
         <section>
           <Card>
             <SectionTitle>Reglas de negocio vigentes</SectionTitle>
+            {errors.reglas && <ErrorMsg />}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -906,6 +933,7 @@ const Dashboard = () => {
         <section>
           <Card>
             <SectionTitle>Equipo con acceso al sistema</SectionTitle>
+            {errors.equipo && <ErrorMsg />}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -967,7 +995,9 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="overflow-auto p-5">
-                {loadingPendientes ? (
+                {errors.pendientes ? (
+                  <ErrorMsg />
+                ) : loadingPendientes ? (
                   <div className="text-center py-8" style={{ color: MUTED }}>Cargando…</div>
                 ) : (
                   <table className="w-full text-sm">
