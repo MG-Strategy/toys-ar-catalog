@@ -85,10 +85,10 @@ const FloatingChatButton = () => {
           return;
         }
 
-        const res = await fetch("https://g4bn4t-n8n.duckdns.org/webhook/descargar_cotizacion", {
+        const res = await fetch("https://g4bn4t-n8n.duckdns.org/webhook/descargar_cotizacion?id=${cotizacionId}", {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cotizacion_id: cotizacionId }),
+          //headers: { "Content-Type": "application/json" },
+          //body: JSON.stringify({ cotizacion_id: cotizacionId }),
         });
 
         if (!res.ok) throw new Error("Error al generar el PDF");
