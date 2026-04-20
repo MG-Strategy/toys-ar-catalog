@@ -173,9 +173,10 @@ const Dashboard = () => {
   // Cotizaciones por día — fechas
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('cotizaciones_globales')
         .select('fecha_cotizacion');
+      if (error) { setErr('cotizaciones', true); return; }
       if (data) {
         setCotizacionesFechas(
           (data as any[]).map((r) => r.fecha_cotizacion).filter(Boolean)
@@ -239,6 +240,8 @@ const Dashboard = () => {
           .eq('es_precio_vigente', true)
           .maybeSingle(),
       ]);
+      if (hist.error || cat.error || vigente.error) { setErr('historico', true); return; }
+      setErr('historico', false);
       if (hist.data) {
         const mapped = (hist.data as any[]).map((r) => ({
           ...r,
@@ -274,11 +277,12 @@ const Dashboard = () => {
   // Ranking productos
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('vista_ranking_productos')
         .select('*')
         .order('veces_cotizado', { ascending: false })
         .limit(10);
+      if (error) { setErr('ranking', true); return; }
       if (data) setRanking(data);
     })();
   }, []);
@@ -286,10 +290,11 @@ const Dashboard = () => {
   // Clientes frecuentes (desde misma vista)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('vista_ranking_productos')
         .select('cliente_frecuente, total_cotizaciones_cliente')
         .order('total_cotizaciones_cliente', { ascending: false });
+      if (error) { setErr('clientes', true); return; }
       if (data) {
         const seen = new Set<string>();
         const dedup: any[] = [];
@@ -308,7 +313,8 @@ const Dashboard = () => {
   // Reglas
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('reglas_negocio').select('*');
+      const { data, error } = await supabase.from('reglas_negocio').select('*');
+      if (error) { setErr('reglas', true); return; }
       if (data) setReglas(data);
     })();
   }, []);
@@ -316,10 +322,11 @@ const Dashboard = () => {
   // Equipo
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('usuarios_dashboard')
         .select('nombre_completo, email, activo, roles_dashboard(rol)')
         .eq('activo', true);
+      if (error) { setErr('equipo', true); return; }
       if (data) {
         setEquipo(
           (data as any[]).map((u) => ({
@@ -336,10 +343,11 @@ const Dashboard = () => {
   // Stock overview — todos los productos con stock
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('vista_catalogo_vigente')
         .select('id, nombre, stock, proveedor, categoria, marca')
         .order('nombre', { ascending: true });
+      if (error) { setErr('stockAll', true); return; }
       if (data) {
         const seen = new Set<string>();
         const arr: { id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string }[] = [];
