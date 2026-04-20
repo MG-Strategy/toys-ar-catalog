@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import { Search, X } from 'lucide-react';
 import { getDisplayName } from '@/lib/categoryLabels';
+import SideCart from '@/components/SideCart';
 
 interface Product {
   id: number;
@@ -53,7 +54,8 @@ const Catalogo = () => {
   const hasFilters = search || categoria || marca;
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 relative">
+      <SideCart />
       {/* Filters */}
       <div className="bg-card rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
