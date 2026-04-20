@@ -120,6 +120,9 @@ const exportBtnStyle: React.CSSProperties = {
 const Dashboard = () => {
   const [kpis, setKpis] = useState<KPIs>({});
   const [estados, setEstados] = useState<{ name: string; value: number }[]>([]);
+  const [canales, setCanales] = useState<{ name: string; value: number }[]>([]);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const setErr = (k: string, v: boolean) => setErrors((e) => ({ ...e, [k]: v }));
   const [productos, setProductos] = useState<ProductoOpt[]>([]);
   const [selectedProducto, setSelectedProducto] = useState<ProductoOpt | null>(null);
   const [search, setSearch] = useState('');
@@ -144,22 +147,25 @@ const Dashboard = () => {
   // KPIs
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('vista_dashboard_kpis').select('*').limit(1).maybeSingle();
+      const { data, error } = await supabase.from('vista_dashboard_kpis').select('*').limit(1).maybeSingle();
+      if (error) { setErr('kpis', true); return; }
       if (data) setKpis(data as any);
     })();
   }, []);
 
-  // Estados donut
+  // Cotizaciones por canal (bar)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('cotizaciones_globales').select('estado');
+      const { data, error } = await supabase.from('cotizaciones_globales').select('canal');
+      if (error) { setErr('canales', true); return; }
       if (data) {
         const counts: Record<string, number> = {};
         data.forEach((r: any) => {
-          const k = r.estado || 'desconocido';
+          const k = (r.canal || '').toString().trim();
+          if (!k) return;
           counts[k] = (counts[k] || 0) + 1;
         });
-        setEstados(Object.entries(counts).map(([name, value]) => ({ name, value })));
+        setCanales(Object.entries(counts).map(([name, value]) => ({ name, value })));
       }
     })();
   }, []);
