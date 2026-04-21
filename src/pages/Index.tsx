@@ -3,18 +3,11 @@ import { getDisplayName } from '@/lib/categoryLabels';
 
 const categories = [
   { dbValue: 'Vehiculos', image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=400&q=80' },
-  { dbValue: 'Peluches', image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=400&q=80' },
   { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=400&q=80', fallbackColor: '#F48FB1', fallbackEmoji: '👧' },
-  { dbValue: 'Muñecos', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400&q=80' },
   { dbValue: 'Juegos de Mesa', image: 'https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=400&q=80' },
-  { dbValue: 'juguetes_educativos', image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&q=80' },
   { dbValue: 'bebes_ALL', label: 'Bebés', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&q=80' },
-  { dbValue: 'exterior', image: 'https://images.unsplash.com/photo-1575783970733-1aaedde1db74?w=400&q=80' },
-  { dbValue: 'manualidades', image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&q=80' },
-  { dbValue: 'electronicos', image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=400&q=80' },
   { dbValue: 'Accion', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400&q=80' },
   { dbValue: 'Didacticos', image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=400&q=80' },
-  { dbValue: 'otros', image: 'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=400&q=80' },
 ];
 
 const features = [
