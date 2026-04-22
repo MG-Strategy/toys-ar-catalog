@@ -149,6 +149,34 @@ const Dashboard = () => {
   const [cotizacionesFechas, setCotizacionesFechas] = useState<string[]>([]);
   const [cotChartType, setCotChartType] = useState<'bar' | 'line'>('bar');
   const [cotPeriodo, setCotPeriodo] = useState<'7d' | '30d' | '3m' | '1y'>('30d');
+  const [ticketPromedio, setTicketPromedio] = useState<{ mes_label: string; ticket_promedio: number; cantidad_cotizaciones: number }[]>([]);
+
+  // Evolución del ticket promedio
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('vista_ticket_promedio_mensual')
+        .select('mes, ticket_promedio, cantidad_cotizaciones');
+      if (error) { setErr('ticketPromedio', true); return; }
+      if (data) {
+        const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        const mapped = (data as any[])
+          .map((r) => {
+            const d = new Date(r.mes);
+            const valid = !isNaN(d.getTime());
+            return {
+              sortKey: valid ? d.getFullYear() * 12 + d.getMonth() : 0,
+              mes_label: valid ? `${meses[d.getMonth()]} ${d.getFullYear()}` : String(r.mes ?? ''),
+              ticket_promedio: Number(r.ticket_promedio || 0),
+              cantidad_cotizaciones: Number(r.cantidad_cotizaciones || 0),
+            };
+          })
+          .sort((a, b) => a.sortKey - b.sortKey)
+          .map(({ sortKey, ...rest }) => rest);
+        setTicketPromedio(mapped);
+      }
+    })();
+  }, []);
 
   // KPIs
   useEffect(() => {
