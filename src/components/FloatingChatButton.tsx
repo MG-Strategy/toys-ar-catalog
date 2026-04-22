@@ -120,8 +120,8 @@ const FloatingChatButton = () => {
           setFlowDone(false);
           setFlowPayload(null);
           setSessionId(genId());
-        }, 500);
-      }, 3000);
+        }, 5000);
+      }, 10000);
     } catch (error) {
       addMessage("bot", "Hubo un error. Por favor intentá de nuevo.");
     } finally {
