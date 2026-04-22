@@ -149,6 +149,34 @@ const Dashboard = () => {
   const [cotizacionesFechas, setCotizacionesFechas] = useState<string[]>([]);
   const [cotChartType, setCotChartType] = useState<'bar' | 'line'>('bar');
   const [cotPeriodo, setCotPeriodo] = useState<'7d' | '30d' | '3m' | '1y'>('30d');
+  const [ticketPromedio, setTicketPromedio] = useState<{ mes_label: string; ticket_promedio: number; cantidad_cotizaciones: number }[]>([]);
+
+  // Evolución del ticket promedio
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('vista_ticket_promedio_mensual')
+        .select('mes, ticket_promedio, cantidad_cotizaciones');
+      if (error) { setErr('ticketPromedio', true); return; }
+      if (data) {
+        const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        const mapped = (data as any[])
+          .map((r) => {
+            const d = new Date(r.mes);
+            const valid = !isNaN(d.getTime());
+            return {
+              sortKey: valid ? d.getFullYear() * 12 + d.getMonth() : 0,
+              mes_label: valid ? `${meses[d.getMonth()]} ${d.getFullYear()}` : String(r.mes ?? ''),
+              ticket_promedio: Number(r.ticket_promedio || 0),
+              cantidad_cotizaciones: Number(r.cantidad_cotizaciones || 0),
+            };
+          })
+          .sort((a, b) => a.sortKey - b.sortKey)
+          .map(({ sortKey, ...rest }) => rest);
+        setTicketPromedio(mapped);
+      }
+    })();
+  }, []);
 
   // KPIs
   useEffect(() => {
@@ -565,6 +593,64 @@ const Dashboard = () => {
             <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>
               {formatTiempoRespuesta(kpis.tiempo_respuesta_promedio_minutos ?? kpis.tiempo_respuesta_promedio)}
             </div>
+          </Card>
+        </section>
+
+        {/* Evolución del ticket promedio */}
+        <section>
+          <Card>
+            <SectionTitle>Evolución del ticket promedio</SectionTitle>
+            {errors.ticketPromedio ? (
+              <ErrorMsg />
+            ) : (
+              <div style={{ width: '100%', height: 320 }}>
+                <ResponsiveContainer>
+                  <LineChart data={ticketPromedio} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
+                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                    <XAxis dataKey="mes_label" stroke={MUTED} />
+                    <YAxis
+                      stroke={MUTED}
+                      tickFormatter={(v: number) =>
+                        `$ ${Number(v || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
+                      }
+                      width={100}
+                    />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      cursor={{ stroke: BORDER }}
+                      labelFormatter={(label: any) => String(label)}
+                      formatter={(value: any, name: any, item: any) => {
+                        if (name === 'ticket_promedio') return [formatARS(Number(value)), 'Ticket promedio'];
+                        return [value, name];
+                      }}
+                      content={({ active, payload, label }: any) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const p = payload[0].payload;
+                        return (
+                          <div style={{ ...tooltipStyle, padding: '8px 12px' }}>
+                            <div style={{ color: TEXT, fontWeight: 600, marginBottom: 4 }}>{label}</div>
+                            <div style={{ color: '#22c55e', fontSize: 13 }}>
+                              Ticket promedio: {formatARS(p.ticket_promedio)}
+                            </div>
+                            <div style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
+                              Cotizaciones: {p.cantidad_cotizaciones}
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="ticket_promedio"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: '#22c55e', stroke: '#22c55e' }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </Card>
         </section>
 
