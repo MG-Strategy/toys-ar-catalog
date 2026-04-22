@@ -22,42 +22,42 @@ const Index = () => {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-10">
-          {/* Left side - text */}
-          <div className="md:w-[60%] text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight" style={{ color: '#1a1a2e' }}>
-              ¡Cotizá tus juguetes{' '}
-              <span style={{ color: '#1565C0' }}>favoritos</span>{' '}
-              <span style={{ color: '#FFD600' }}>al instante!</span>
-            </h1>
-            <p className="text-lg md:text-xl max-w-lg mb-8" style={{ color: '#555' }}>
-              Armá tu lista de juguetes, elegí las cantidades y pedí tu cotización personalizada. ¡Es rápido y fácil!
-            </p>
-            <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
-              <button
-                onClick={() => navigate('/catalogo')}
-                className="px-8 py-4 rounded-full font-bold text-lg hover:opacity-90 transition-opacity shadow-lg text-white"
-                style={{ backgroundColor: '#1565C0' }}
-              >
-                🛍️ Cotizá ahora
-              </button>
-              <button
-                onClick={() => navigate('/cotizar')}
-                className="px-8 py-4 rounded-full bg-white font-bold text-lg border-2 hover:bg-gray-50 transition-colors shadow-lg"
-                style={{ borderColor: '#FFD600', color: '#1a1a2e' }}
-              >
-                💬 Ver mi cotización
-              </button>
-            </div>
-          </div>
-          {/* Right side - image */}
-          <div className="md:w-[40%]">
-            <img
-              src="https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=600&q=80"
-              alt="Juguetes coloridos"
-              className="w-full rounded-2xl shadow-xl object-cover max-h-[400px]"
-            />
+      <section className="relative w-full min-h-[60vh] flex items-center justify-center py-20 overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=1920&q=80"
+            alt="Fondo de juguetes minimalista"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 container mx-auto px-6 flex flex-col items-center text-center">
+          <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight max-w-4xl" style={{ color: '#1a1a2e' }}>
+            ¡Cotizá tus juguetes{' '}
+            <span style={{ color: '#1565C0' }}>favoritos</span>{' '}
+            <span style={{ color: '#FFD600' }}>al instante!</span>
+          </h1>
+          <p className="text-lg md:text-xl lg:text-2xl max-w-2xl mb-10 font-medium text-gray-700">
+            Armá tu lista de juguetes, elegí las cantidades y pedí tu cotización personalizada. ¡Es rápido y fácil!
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md">
+            <button
+              onClick={() => navigate('/catalogo')}
+              className="w-full sm:w-auto px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-xl text-white"
+              style={{ backgroundColor: '#1565C0' }}
+            >
+              🛍️ Cotizá ahora
+            </button>
+            <button
+              onClick={() => navigate('/cotizar')}
+              className="w-full sm:w-auto px-10 py-4 rounded-full bg-white font-bold text-lg border-2 hover:bg-gray-50 hover:scale-105 transition-all shadow-xl"
+              style={{ borderColor: '#FFD600', color: '#1a1a2e' }}
+            >
+              💬 Ver mi cotización
+            </button>
           </div>
         </div>
       </section>
