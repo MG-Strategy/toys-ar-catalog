@@ -68,7 +68,7 @@ const Index = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
           {categories.map(cat => (
             <button
-              key={cat.dbValue}
+              key={`${cat.dbValue}-${cat.image}`}
               onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(cat.dbValue)}`)}
               className="rounded-2xl overflow-hidden relative h-[200px] shadow-lg cursor-pointer group transition-transform duration-300 hover:scale-105"
             >
@@ -79,14 +79,9 @@ const Index = () => {
                 onError={(e) => {
                   const target = e.currentTarget;
                   target.style.display = 'none';
-                  const parent = target.parentElement!;
-                  parent.style.backgroundColor = (cat as any).fallbackColor || '#1565C0';
-                  if ((cat as any).fallbackEmoji) {
-                    const emojiEl = document.createElement('span');
-                    emojiEl.textContent = (cat as any).fallbackEmoji;
-                    emojiEl.className = 'absolute inset-0 flex items-center justify-center text-6xl';
-                    emojiEl.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3.5rem;';
-                    parent.appendChild(emojiEl);
+                  const parent = target.parentElement;
+                  if (parent) {
+                    parent.style.backgroundColor = '#1565C0';
                   }
                 }}
               />
