@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { getDisplayName } from '@/lib/categoryLabels';
+import munecasCard from '@/assets/munecas-card.jpg';
 
 const categories = [
   { dbValue: 'Vehiculos', image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=400&q=80' },
-  { dbValue: 'Muñecas', image: 'https://images.unsplash.com/photo-1559441113-91136d8d6896?auto=format&fit=crop&w=800&q=80' },
+  { dbValue: 'Muñecas', image: munecasCard },
   { dbValue: 'Juegos de Mesa', image: 'https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=400&q=80' },
   { dbValue: 'bebes_ALL', label: 'Bebés', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&q=80' },
   { dbValue: 'Accion', image: 'https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=400&q=80' },
