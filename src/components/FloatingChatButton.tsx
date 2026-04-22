@@ -32,7 +32,7 @@ const FloatingChatButton = () => {
       addMessage("bot", CONFIG.GREETING);
     }
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 200);
+      setTimeout(() => inputRef.current?.focus(), 2000);
     }
   }, [isOpen]);
 
