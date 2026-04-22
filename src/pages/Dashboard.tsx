@@ -908,24 +908,36 @@ const Dashboard = () => {
                 <thead>
                   <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
                     <th className="text-left py-2 px-3">Nombre</th>
-                    <th className="text-right py-2 px-3">Margen %</th>
-                    <th className="text-right py-2 px-3">Precio mín</th>
-                    <th className="text-right py-2 px-3">Precio máx</th>
-                    <th className="text-center py-2 px-3">Activa</th>
+                    <th className="text-left py-2 px-3">Tipo</th>
+                    <th className="text-right py-2 px-3">Valor</th>
+                    <th className="text-left py-2 px-3">Descripción</th>
+                    <th className="text-left py-2 px-3">Vigente desde</th>
+                    <th className="text-center py-2 px-3">Activo</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reglas.map((r: any, i) => (
-                    <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <td className="py-2 px-3">{r.nombre_regla}</td>
-                      <td className="py-2 px-3 text-right">{r.margen_porcentaje}%</td>
-                      <td className="py-2 px-3 text-right">{r.condicion_precio_min ?? '—'}</td>
-                      <td className="py-2 px-3 text-right">{r.condicion_precio_max ?? '—'}</td>
-                      <td className="py-2 px-3 text-center">{activoBadge(!!r.activa)}</td>
-                    </tr>
-                  ))}
+                  {reglas.map((r: any, i) => {
+                    const tipoMap: Record<string, string> = {
+                      costo_fijo: 'Costo Fijo',
+                      costo_variable: 'Costo Variable',
+                      margen_ganancia: 'Margen de Ganancia',
+                    };
+                    const tipoLabel = tipoMap[r.tipo_regla] ?? (r.tipo_regla ?? '—');
+                    const valorNum = Number(r.valor);
+                    const valorLabel = isNaN(valorNum) ? '—' : `${Math.round(valorNum * 100)}%`;
+                    return (
+                      <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        <td className="py-2 px-3">{r.nombre_regla}</td>
+                        <td className="py-2 px-3">{tipoLabel}</td>
+                        <td className="py-2 px-3 text-right">{valorLabel}</td>
+                        <td className="py-2 px-3 text-xs" style={{ color: MUTED }}>{r.descripcion ?? '—'}</td>
+                        <td className="py-2 px-3">{r.fecha_vigencia ? formatFechaCorta(r.fecha_vigencia) : '—'}</td>
+                        <td className="py-2 px-3 text-center">{activoBadge(!!r.activo)}</td>
+                      </tr>
+                    );
+                  })}
                   {reglas.length === 0 && (
-                    <tr><td colSpan={5} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin reglas</td></tr>
+                    <tr><td colSpan={6} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin reglas</td></tr>
                   )}
                 </tbody>
               </table>
