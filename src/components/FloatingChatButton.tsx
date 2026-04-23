@@ -63,7 +63,7 @@ const FloatingChatButton = () => {
       if (data.reply) addMessage("bot", data.reply);
       if (data.done === true) {
         setFlowDone(true);
-        setFlowPayload(data.payload || {});
+        setFlowPayload(data.payload ?? null);
       }
     } catch (error) {
       addMessage("bot", "No pude conectar con el servidor. ¿Intentás de nuevo?");
