@@ -1170,7 +1170,9 @@ const Dashboard = () => {
           </Card>
         </section>
 
-        {/* SECTION 7 — Equipo */}
+        {/* SECTION 6.5 — Simulador de pricing */}
+        <SimuladorPricing productos={productos} reglas={reglas} />
+
         <section>
           <Card>
             <SectionTitle>Equipo con acceso al sistema</SectionTitle>
