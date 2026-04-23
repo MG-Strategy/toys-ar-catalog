@@ -63,7 +63,7 @@ const FloatingChatButton = () => {
       if (data.reply) addMessage("bot", data.reply);
       if (data.done === true) {
         setFlowDone(true);
-        setFlowPayload(data.payload || {});
+        setFlowPayload(data.payload ?? null);
       }
     } catch (error) {
       addMessage("bot", "No pude conectar con el servidor. ¿Intentás de nuevo?");
@@ -202,7 +202,7 @@ const FloatingChatButton = () => {
               </div>
             )}
 
-            {flowDone && !isTyping && (
+            {flowDone && !isTyping && flowPayload?.cotizacion_id && (
               <div className="flex justify-start mt-2">
                 <div className="bg-white border border-[#e0e0e0] rounded-2xl rounded-tl-sm p-3.5 max-w-[88%]">
                   <p className="text-[13px] text-[#555] mb-3">
