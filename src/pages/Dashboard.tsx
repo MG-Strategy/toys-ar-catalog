@@ -325,7 +325,7 @@ const Dashboard = () => {
     })();
   }, []);
 
-  // Clientes frecuentes (desde misma vista)
+  // Clientes frecuentes (desde misma vista) + email/telefono desde usuarios
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
@@ -343,8 +343,51 @@ const Dashboard = () => {
           dedup.push(r);
           if (dedup.length >= 10) break;
         }
-        setClientes(dedup);
+        const nombres = dedup.map((d) => d.cliente_frecuente);
+        let contactMap = new Map<string, { email: string | null; telefono: string | null }>();
+        if (nombres.length > 0) {
+          const { data: usrs } = await supabase
+            .from('usuarios')
+            .select('nombre_completo, email, telefono')
+            .in('nombre_completo', nombres);
+          for (const u of (usrs as any[]) || []) {
+            if (u?.nombre_completo && !contactMap.has(u.nombre_completo)) {
+              contactMap.set(u.nombre_completo, { email: u.email ?? null, telefono: u.telefono ?? null });
+            }
+          }
+        }
+        setClientes(
+          dedup.map((d) => ({
+            ...d,
+            email: contactMap.get(d.cliente_frecuente)?.email ?? null,
+            telefono: contactMap.get(d.cliente_frecuente)?.telefono ?? null,
+          }))
+        );
       }
+    })();
+  }, []);
+
+  // Categorías más pedidas
+  const [categoriasPedidas, setCategoriasPedidas] = useState<{ categoria: string; veces_pedida: number; unidades_totales: number }[]>([]);
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('cotizacion_productos')
+        .select('cantidad_productos, productos!inner(categoria)');
+      if (error) { setErr('categoriasPedidas', true); return; }
+      const acc = new Map<string, { veces_pedida: number; unidades_totales: number }>();
+      for (const r of (data as any[]) || []) {
+        const cat = r?.productos?.categoria;
+        if (!cat) continue;
+        const cur = acc.get(cat) || { veces_pedida: 0, unidades_totales: 0 };
+        cur.veces_pedida += 1;
+        cur.unidades_totales += Number(r.cantidad_productos || 0);
+        acc.set(cat, cur);
+      }
+      const arr = Array.from(acc.entries())
+        .map(([categoria, v]) => ({ categoria, ...v }))
+        .sort((a, b) => b.veces_pedida - a.veces_pedida);
+      setCategoriasPedidas(arr);
     })();
   }, []);
 
@@ -964,7 +1007,9 @@ const Dashboard = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
-                    <th className="text-left py-2 px-3">Cliente</th>
+                    <th className="text-left py-2 px-3">Nombre</th>
+                    <th className="text-left py-2 px-3">Email</th>
+                    <th className="text-left py-2 px-3">Teléfono</th>
                     <th className="text-right py-2 px-3">Total cotizaciones</th>
                   </tr>
                 </thead>
@@ -972,14 +1017,51 @@ const Dashboard = () => {
                   {clientes.map((c, i) => (
                     <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
                       <td className="py-2 px-3">{c.cliente_frecuente}</td>
+                      <td className="py-2 px-3" style={{ color: MUTED }}>{c.email ?? '—'}</td>
+                      <td className="py-2 px-3" style={{ color: MUTED }}>{c.telefono ?? '—'}</td>
                       <td className="py-2 px-3 text-right font-semibold">{c.total_cotizaciones_cliente}</td>
                     </tr>
                   ))}
                   {clientes.length === 0 && (
-                    <tr><td colSpan={2} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin datos</td></tr>
+                    <tr><td colSpan={4} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin datos</td></tr>
                   )}
                 </tbody>
               </table>
+            </div>
+          </Card>
+        </section>
+
+        {/* SECTION 5b — Categorías más pedidas */}
+        <section>
+          <Card>
+            <SectionTitle>Categorías más pedidas</SectionTitle>
+            <p className="text-xs mb-4" style={{ color: MUTED }}>Útil para campañas de marketing</p>
+            {errors.categoriasPedidas && <ErrorMsg />}
+            <div style={{ width: '100%', height: Math.max(260, categoriasPedidas.length * 44) }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={categoriasPedidas}
+                  layout="vertical"
+                  margin={{ top: 8, right: 24, left: 24, bottom: 8 }}
+                >
+                  <CartesianGrid stroke={BORDER} strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" stroke={MUTED} tick={{ fill: MUTED, fontSize: 12 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="categoria"
+                    stroke={MUTED}
+                    tick={{ fill: TEXT, fontSize: 12 }}
+                    width={140}
+                  />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                  <Legend wrapperStyle={{ color: TEXT }} />
+                  <Bar dataKey="veces_pedida" fill={BLUE} name="Veces pedida" />
+                  <Bar dataKey="unidades_totales" fill={YELLOW} name="Unidades totales" />
+                </BarChart>
+              </ResponsiveContainer>
+              {categoriasPedidas.length === 0 && !errors.categoriasPedidas && (
+                <p className="py-4 text-center text-sm" style={{ color: MUTED }}>Sin datos</p>
+              )}
             </div>
           </Card>
         </section>
