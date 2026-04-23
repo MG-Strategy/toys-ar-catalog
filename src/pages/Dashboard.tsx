@@ -325,7 +325,7 @@ const Dashboard = () => {
     })();
   }, []);
 
-  // Clientes frecuentes (desde misma vista) + email/telefono desde usuarios
+  // Clientes frecuentes (desde misma vista) + email/telefono + categoría favorita
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
@@ -344,24 +344,59 @@ const Dashboard = () => {
           if (dedup.length >= 10) break;
         }
         const nombres = dedup.map((d) => d.cliente_frecuente);
-        let contactMap = new Map<string, { email: string | null; telefono: string | null }>();
+        let contactMap = new Map<string, { email: string | null; telefono: string | null; id: string | null }>();
         if (nombres.length > 0) {
           const { data: usrs } = await supabase
             .from('usuarios')
-            .select('nombre_completo, email, telefono')
+            .select('id, nombre_completo, email, telefono')
             .in('nombre_completo', nombres);
           for (const u of (usrs as any[]) || []) {
             if (u?.nombre_completo && !contactMap.has(u.nombre_completo)) {
-              contactMap.set(u.nombre_completo, { email: u.email ?? null, telefono: u.telefono ?? null });
+              contactMap.set(u.nombre_completo, {
+                email: u.email ?? null,
+                telefono: u.telefono ?? null,
+                id: u.id ?? null,
+              });
             }
           }
         }
+
+        // Categoría favorita por cliente
+        const userIds = Array.from(contactMap.values()).map((v) => v.id).filter(Boolean) as string[];
+        const favByUserId = new Map<string, string>();
+        if (userIds.length > 0) {
+          const { data: cps } = await supabase
+            .from('cotizacion_productos')
+            .select('cantidad_productos, productos!inner(categoria), cotizaciones_globales!inner(id_usuario)')
+            .in('cotizaciones_globales.id_usuario', userIds);
+          const counts = new Map<string, Map<string, number>>(); // userId -> categoria -> veces
+          for (const r of (cps as any[]) || []) {
+            const uid = r?.cotizaciones_globales?.id_usuario;
+            const cat = r?.productos?.categoria;
+            if (!uid || !cat) continue;
+            if (!counts.has(uid)) counts.set(uid, new Map());
+            const m = counts.get(uid)!;
+            m.set(cat, (m.get(cat) || 0) + 1);
+          }
+          for (const [uid, m] of counts.entries()) {
+            let bestCat = '', bestN = -1;
+            for (const [cat, n] of m.entries()) {
+              if (n > bestN) { bestN = n; bestCat = cat; }
+            }
+            if (bestCat) favByUserId.set(uid, bestCat);
+          }
+        }
+
         setClientes(
-          dedup.map((d) => ({
-            ...d,
-            email: contactMap.get(d.cliente_frecuente)?.email ?? null,
-            telefono: contactMap.get(d.cliente_frecuente)?.telefono ?? null,
-          }))
+          dedup.map((d) => {
+            const ct = contactMap.get(d.cliente_frecuente);
+            return {
+              ...d,
+              email: ct?.email ?? null,
+              telefono: ct?.telefono ?? null,
+              categoria_favorita: ct?.id ? favByUserId.get(ct.id) ?? null : null,
+            };
+          })
         );
       }
     })();
@@ -1010,20 +1045,41 @@ const Dashboard = () => {
                     <th className="text-left py-2 px-3">Nombre</th>
                     <th className="text-left py-2 px-3">Email</th>
                     <th className="text-left py-2 px-3">Teléfono</th>
+                    <th className="text-left py-2 px-3">Categoría favorita</th>
                     <th className="text-right py-2 px-3">Total cotizaciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {clientes.map((c, i) => (
-                    <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <td className="py-2 px-3">{c.cliente_frecuente}</td>
-                      <td className="py-2 px-3" style={{ color: MUTED }}>{c.email ?? '—'}</td>
-                      <td className="py-2 px-3" style={{ color: MUTED }}>{c.telefono ?? '—'}</td>
-                      <td className="py-2 px-3 text-right font-semibold">{c.total_cotizaciones_cliente}</td>
-                    </tr>
-                  ))}
+                  {clientes.map((c, i) => {
+                    const catColors: Record<string, { bg: string; color: string }> = {
+                      Didacticos: { bg: '#1565C0', color: '#fff' },
+                      Muñecas: { bg: '#9333ea', color: '#fff' },
+                      Accion: { bg: '#f97316', color: '#fff' },
+                      'Juegos de Mesa': { bg: '#16a34a', color: '#fff' },
+                      Bebes: { bg: '#ec4899', color: '#fff' },
+                      bebes: { bg: '#ec4899', color: '#fff' },
+                      Vehiculos: { bg: '#06b6d4', color: '#0f172a' },
+                    };
+                    const cat = c.categoria_favorita;
+                    const cc = cat ? catColors[cat] : null;
+                    return (
+                      <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        <td className="py-2 px-3">{c.cliente_frecuente}</td>
+                        <td className="py-2 px-3" style={{ color: MUTED }}>{c.email ?? '—'}</td>
+                        <td className="py-2 px-3" style={{ color: MUTED }}>{c.telefono ?? '—'}</td>
+                        <td className="py-2 px-3">
+                          {cat ? (
+                            <Badge color={cc?.color ?? '#fff'} bg={cc?.bg ?? '#64748b'}>{cat}</Badge>
+                          ) : (
+                            <span style={{ color: MUTED }}>—</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 text-right font-semibold">{c.total_cotizaciones_cliente}</td>
+                      </tr>
+                    );
+                  })}
                   {clientes.length === 0 && (
-                    <tr><td colSpan={4} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin datos</td></tr>
+                    <tr><td colSpan={5} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin datos</td></tr>
                   )}
                 </tbody>
               </table>
