@@ -5,6 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   BarChart, Bar,
 } from 'recharts';
+import { Slider } from '@/components/ui/slider';
 
 const BG = '#0f172a';
 const CARD = '#1e293b';
@@ -121,6 +122,204 @@ const exportBtnStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 600,
   cursor: 'pointer',
+};
+
+type SimProducto = { id: string; nombre: string; precio_proveedor?: number; precio_publico?: number };
+
+const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reglas: any[] }) => {
+  const defaults = useMemo(() => {
+    const get = (tipo: string) => {
+      const r = reglas.find((x: any) => x.tipo_regla === tipo && x.activo);
+      const v = Number(r?.valor);
+      return isNaN(v) ? 0 : Math.round(v * 100);
+    };
+    return {
+      cf: get('costo_fijo'),
+      cv: get('costo_variable'),
+      mg: get('margen_ganancia'),
+    };
+  }, [reglas]);
+
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<SimProducto | null>(null);
+  const [precios, setPrecios] = useState<{ precio_proveedor: number; precio_publico: number } | null>(null);
+  const [cf, setCf] = useState(0);
+  const [cv, setCv] = useState(0);
+  const [mg, setMg] = useState(0);
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    if (!touched) {
+      setCf(defaults.cf);
+      setCv(defaults.cv);
+      setMg(defaults.mg);
+    }
+  }, [defaults, touched]);
+
+  // Auto select first product
+  useEffect(() => {
+    if (!selected && productos.length > 0) {
+      setSelected({ id: productos[0].id, nombre: productos[0].nombre });
+    }
+  }, [productos, selected]);
+
+  // Load precio_proveedor + precio_publico for selected
+  useEffect(() => {
+    if (!selected) return;
+    (async () => {
+      const { data } = await supabase
+        .from('vista_catalogo_vigente')
+        .select('precio_proveedor, precio_publico')
+        .eq('id', selected.id)
+        .maybeSingle();
+      if (data) {
+        setPrecios({
+          precio_proveedor: Number((data as any).precio_proveedor || 0),
+          precio_publico: Number((data as any).precio_publico || 0),
+        });
+      } else {
+        setPrecios(null);
+      }
+    })();
+  }, [selected]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return productos.slice(0, 50);
+    return productos.filter((p) => p.nombre.toLowerCase().includes(q)).slice(0, 50);
+  }, [search, productos]);
+
+  const proveedor = precios?.precio_proveedor ?? 0;
+  const publicoActual = precios?.precio_publico ?? 0;
+  const factor = 1 + cf / 100 + cv / 100 + mg / 100;
+  const simulado = proveedor * factor;
+  const diff = simulado - publicoActual;
+  const diffPct = publicoActual > 0 ? (diff / publicoActual) * 100 : 0;
+
+  const sliderClass = "[&_[role=slider]]:border-[#1565C0] [&>:first-child>:first-child]:bg-[#1565C0] [&>:first-child]:bg-[#1e293b]";
+
+  return (
+    <section>
+      <Card>
+        <SectionTitle>Simulador de pricing</SectionTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEFT: selector + sliders */}
+          <div>
+            <label className="text-xs font-semibold mb-1 block" style={{ color: MUTED }}>Producto</label>
+            <div className="relative mb-4">
+              <input
+                type="text"
+                value={selected ? selected.nombre : search}
+                onChange={(e) => { setSearch(e.target.value); setSelected(null); setOpen(true); }}
+                onFocus={() => setOpen(true)}
+                onBlur={() => setTimeout(() => setOpen(false), 150)}
+                placeholder="Buscar producto…"
+                className="w-full px-3 py-2 rounded-md text-sm outline-none"
+                style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+              />
+              {open && filtered.length > 0 && (
+                <div
+                  className="absolute z-10 w-full mt-1 rounded-md max-h-60 overflow-y-auto"
+                  style={{ background: CARD, border: `1px solid ${BORDER}` }}
+                >
+                  {filtered.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onMouseDown={() => { setSelected({ id: p.id, nombre: p.nombre }); setSearch(''); setOpen(false); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:opacity-80"
+                      style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}
+                    >
+                      {p.nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {selected && (
+              <div className="mb-4 p-3 rounded-md" style={{ background: BG, border: `1px solid ${BORDER}` }}>
+                <div className="text-sm font-semibold" style={{ color: TEXT }}>{selected.nombre}</div>
+                <div className="text-xs mt-1" style={{ color: MUTED }}>
+                  Precio proveedor actual: <span style={{ color: TEXT }}>{formatARS(proveedor)}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-5">
+              {[
+                { label: 'Costo Fijo', value: cf, set: setCf },
+                { label: 'Costo Variable', value: cv, set: setCv },
+                { label: 'Margen de Ganancia', value: mg, set: setMg },
+              ].map((s) => (
+                <div key={s.label}>
+                  <div className="flex justify-between mb-2 text-sm">
+                    <span style={{ color: TEXT }}>{s.label}</span>
+                    <span className="font-semibold" style={{ color: BLUE }}>{s.value}%</span>
+                  </div>
+                  <Slider
+                    value={[s.value]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={(v) => { s.set(v[0]); setTouched(true); }}
+                    className={sliderClass}
+                  />
+                </div>
+              ))}
+              {touched && (
+                <button
+                  type="button"
+                  onClick={() => setTouched(false)}
+                  className="text-xs underline"
+                  style={{ color: MUTED }}
+                >
+                  Restablecer valores por defecto
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: results */}
+          <div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 rounded-md" style={{ background: BG, border: `1px solid ${BORDER}` }}>
+                <span className="text-sm" style={{ color: MUTED }}>Precio proveedor</span>
+                <span className="font-semibold" style={{ color: MUTED }}>{formatARS(proveedor)}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 rounded-md" style={{ background: BG, border: `1px solid ${BORDER}` }}>
+                <span className="text-sm" style={{ color: TEXT }}>Precio público actual</span>
+                <span className="font-semibold" style={{ color: BLUE }}>{formatARS(publicoActual)}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 rounded-md" style={{ background: BG, border: `1px solid #16a34a` }}>
+                <span className="text-sm" style={{ color: TEXT }}>Precio público simulado</span>
+                <span className="font-bold text-lg" style={{ color: '#16a34a' }}>{formatARS(simulado)}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-md" style={{ background: BG, border: `1px solid ${BORDER}` }}>
+                  <div className="text-xs mb-1" style={{ color: MUTED }}>Diferencia</div>
+                  <div className="font-semibold" style={{ color: diff >= 0 ? '#16a34a' : '#ef4444' }}>
+                    {diff >= 0 ? '+ ' : '- '}{formatARS(Math.abs(diff))}
+                  </div>
+                </div>
+                <div className="p-3 rounded-md" style={{ background: BG, border: `1px solid ${BORDER}` }}>
+                  <div className="text-xs mb-1" style={{ color: MUTED }}>Diferencia %</div>
+                  <div className="font-semibold" style={{ color: diffPct >= 0 ? '#16a34a' : '#ef4444' }}>
+                    {diffPct >= 0 ? '+' : ''}{diffPct.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs mt-5" style={{ color: '#f97316' }}>
+              ⚠️ Este simulador es solo de visualización. No modifica los precios reales del sistema.
+            </p>
+          </div>
+        </div>
+      </Card>
+    </section>
+  );
 };
 
 const Dashboard = () => {
@@ -1169,7 +1368,9 @@ const Dashboard = () => {
           </Card>
         </section>
 
-        {/* SECTION 7 — Equipo */}
+        {/* SECTION 6.5 — Simulador de pricing */}
+        <SimuladorPricing productos={productos} reglas={reglas} />
+
         <section>
           <Card>
             <SectionTitle>Equipo con acceso al sistema</SectionTitle>
