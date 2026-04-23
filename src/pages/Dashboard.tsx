@@ -325,7 +325,7 @@ const Dashboard = () => {
     })();
   }, []);
 
-  // Clientes frecuentes (desde misma vista) + email/telefono desde usuarios
+  // Clientes frecuentes (desde misma vista) + email/telefono + categoría favorita
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
@@ -344,24 +344,59 @@ const Dashboard = () => {
           if (dedup.length >= 10) break;
         }
         const nombres = dedup.map((d) => d.cliente_frecuente);
-        let contactMap = new Map<string, { email: string | null; telefono: string | null }>();
+        let contactMap = new Map<string, { email: string | null; telefono: string | null; id: string | null }>();
         if (nombres.length > 0) {
           const { data: usrs } = await supabase
             .from('usuarios')
-            .select('nombre_completo, email, telefono')
+            .select('id, nombre_completo, email, telefono')
             .in('nombre_completo', nombres);
           for (const u of (usrs as any[]) || []) {
             if (u?.nombre_completo && !contactMap.has(u.nombre_completo)) {
-              contactMap.set(u.nombre_completo, { email: u.email ?? null, telefono: u.telefono ?? null });
+              contactMap.set(u.nombre_completo, {
+                email: u.email ?? null,
+                telefono: u.telefono ?? null,
+                id: u.id ?? null,
+              });
             }
           }
         }
+
+        // Categoría favorita por cliente
+        const userIds = Array.from(contactMap.values()).map((v) => v.id).filter(Boolean) as string[];
+        const favByUserId = new Map<string, string>();
+        if (userIds.length > 0) {
+          const { data: cps } = await supabase
+            .from('cotizacion_productos')
+            .select('cantidad_productos, productos!inner(categoria), cotizaciones_globales!inner(id_usuario)')
+            .in('cotizaciones_globales.id_usuario', userIds);
+          const counts = new Map<string, Map<string, number>>(); // userId -> categoria -> veces
+          for (const r of (cps as any[]) || []) {
+            const uid = r?.cotizaciones_globales?.id_usuario;
+            const cat = r?.productos?.categoria;
+            if (!uid || !cat) continue;
+            if (!counts.has(uid)) counts.set(uid, new Map());
+            const m = counts.get(uid)!;
+            m.set(cat, (m.get(cat) || 0) + 1);
+          }
+          for (const [uid, m] of counts.entries()) {
+            let bestCat = '', bestN = -1;
+            for (const [cat, n] of m.entries()) {
+              if (n > bestN) { bestN = n; bestCat = cat; }
+            }
+            if (bestCat) favByUserId.set(uid, bestCat);
+          }
+        }
+
         setClientes(
-          dedup.map((d) => ({
-            ...d,
-            email: contactMap.get(d.cliente_frecuente)?.email ?? null,
-            telefono: contactMap.get(d.cliente_frecuente)?.telefono ?? null,
-          }))
+          dedup.map((d) => {
+            const ct = contactMap.get(d.cliente_frecuente);
+            return {
+              ...d,
+              email: ct?.email ?? null,
+              telefono: ct?.telefono ?? null,
+              categoria_favorita: ct?.id ? favByUserId.get(ct.id) ?? null : null,
+            };
+          })
         );
       }
     })();
