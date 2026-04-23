@@ -5,6 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   BarChart, Bar,
 } from 'recharts';
+import { Slider } from '@/components/ui/slider';
 
 const BG = '#0f172a';
 const CARD = '#1e293b';
