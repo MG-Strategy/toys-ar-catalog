@@ -1045,20 +1045,41 @@ const Dashboard = () => {
                     <th className="text-left py-2 px-3">Nombre</th>
                     <th className="text-left py-2 px-3">Email</th>
                     <th className="text-left py-2 px-3">Teléfono</th>
+                    <th className="text-left py-2 px-3">Categoría favorita</th>
                     <th className="text-right py-2 px-3">Total cotizaciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {clientes.map((c, i) => (
-                    <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <td className="py-2 px-3">{c.cliente_frecuente}</td>
-                      <td className="py-2 px-3" style={{ color: MUTED }}>{c.email ?? '—'}</td>
-                      <td className="py-2 px-3" style={{ color: MUTED }}>{c.telefono ?? '—'}</td>
-                      <td className="py-2 px-3 text-right font-semibold">{c.total_cotizaciones_cliente}</td>
-                    </tr>
-                  ))}
+                  {clientes.map((c, i) => {
+                    const catColors: Record<string, { bg: string; color: string }> = {
+                      Didacticos: { bg: '#1565C0', color: '#fff' },
+                      Muñecas: { bg: '#9333ea', color: '#fff' },
+                      Accion: { bg: '#f97316', color: '#fff' },
+                      'Juegos de Mesa': { bg: '#16a34a', color: '#fff' },
+                      Bebes: { bg: '#ec4899', color: '#fff' },
+                      bebes: { bg: '#ec4899', color: '#fff' },
+                      Vehiculos: { bg: '#06b6d4', color: '#0f172a' },
+                    };
+                    const cat = c.categoria_favorita;
+                    const cc = cat ? catColors[cat] : null;
+                    return (
+                      <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        <td className="py-2 px-3">{c.cliente_frecuente}</td>
+                        <td className="py-2 px-3" style={{ color: MUTED }}>{c.email ?? '—'}</td>
+                        <td className="py-2 px-3" style={{ color: MUTED }}>{c.telefono ?? '—'}</td>
+                        <td className="py-2 px-3">
+                          {cat ? (
+                            <Badge color={cc?.color ?? '#fff'} bg={cc?.bg ?? '#64748b'}>{cat}</Badge>
+                          ) : (
+                            <span style={{ color: MUTED }}>—</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 text-right font-semibold">{c.total_cotizaciones_cliente}</td>
+                      </tr>
+                    );
+                  })}
                   {clientes.length === 0 && (
-                    <tr><td colSpan={4} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin datos</td></tr>
+                    <tr><td colSpan={5} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin datos</td></tr>
                   )}
                 </tbody>
               </table>
