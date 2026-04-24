@@ -798,6 +798,21 @@ const Dashboard = () => {
     );
   };
 
+  const exportClientes = () => {
+    if (clientes.length === 0) return;
+    downloadCSV(
+      `juguetear_clientes_frecuentes_${todayStamp()}.csv`,
+      ['nombre_completo', 'email', 'telefono', 'total_cotizaciones', 'categoria_favorita'],
+      clientes.map((c) => [
+        c.cliente_frecuente ?? '',
+        c.email ?? '',
+        c.telefono ?? '',
+        c.total_cotizaciones_cliente ?? 0,
+        c.categoria_favorita ?? '',
+      ])
+    );
+  };
+
   const exportPendientes = () => {
     if (pendientes.length === 0) return;
     downloadCSV(
@@ -1245,8 +1260,17 @@ const Dashboard = () => {
         {/* SECTION 5 — Clientes frecuentes */}
         <section>
           <Card>
-            <SectionTitle>Clientes frecuentes</SectionTitle>
-            {errors.clientes && <ErrorMsg />}
+            <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
+              <SectionTitle>Clientes frecuentes</SectionTitle>
+              {errors.clientes && <ErrorMsg />}
+              <button
+                onClick={exportClientes}
+                disabled={clientes.length === 0}
+                style={{ ...exportBtnStyle, opacity: clientes.length === 0 ? 0.5 : 1 }}
+              >
+                ↓ Exportar CSV
+              </button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
