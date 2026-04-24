@@ -144,15 +144,14 @@ const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reg
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<SimProducto | null>(null);
   const [precios, setPrecios] = useState<{ precio_proveedor: number; precio_publico: number } | null>(null);
-  const [cf, setCf] = useState(0);
-  const [cv, setCv] = useState(0);
   const [mg, setMg] = useState(0);
   const [touched, setTouched] = useState(false);
 
+  const cf = defaults.cf;
+  const cv = defaults.cv;
+
   useEffect(() => {
     if (!touched) {
-      setCf(defaults.cf);
-      setCv(defaults.cv);
       setMg(defaults.mg);
     }
   }, [defaults, touched]);
@@ -248,26 +247,24 @@ const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reg
             )}
 
             <div className="space-y-5">
-              {[
-                { label: 'Costo Fijo', value: cf, set: setCf },
-                { label: 'Costo Variable', value: cv, set: setCv },
-                { label: 'Margen de Ganancia', value: mg, set: setMg },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div className="flex justify-between mb-2 text-sm">
-                    <span style={{ color: TEXT }}>{s.label}</span>
-                    <span className="font-semibold" style={{ color: BLUE }}>{s.value}%</span>
-                  </div>
-                  <Slider
-                    value={[s.value]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(v) => { s.set(v[0]); setTouched(true); }}
-                    className={sliderClass}
-                  />
+              <div className="space-y-1">
+                <div className="text-xs" style={{ color: MUTED }}>Costo Fijo: {cf}% (fijo)</div>
+                <div className="text-xs" style={{ color: MUTED }}>Costo Variable: {cv}% (fijo)</div>
+              </div>
+              <div>
+                <div className="flex justify-between mb-2 text-sm">
+                  <span style={{ color: TEXT }}>Margen de Ganancia</span>
+                  <span className="font-semibold" style={{ color: BLUE }}>{mg}%</span>
                 </div>
-              ))}
+                <Slider
+                  value={[mg]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={(v) => { setMg(v[0]); setTouched(true); }}
+                  className={sliderClass}
+                />
+              </div>
               {touched && (
                 <button
                   type="button"
