@@ -111,7 +111,12 @@ const Cotizar = () => {
               <tbody>
                 {items.map(item => (
                   <tr key={item.id} className="border-b border-border last:border-0">
-                    <td className="p-3 font-medium capitalize">{item.nombre}</td>
+                    <td className="p-3 font-medium capitalize">
+                      <div>{item.nombre}</div>
+                      {item.sku && (
+                        <div className="text-muted-foreground/70 normal-case mt-0.5" style={{ fontSize: '11px' }}>SKU: {item.sku}</div>
+                      )}
+                    </td>
                     <td className="p-3 text-center">
                       <input
                         type="number"

@@ -28,7 +28,7 @@ const Catalogo = () => {
   const [marca, setMarca] = useState('');
 
   useEffect(() => {
-    supabase.from('vista_catalogo_vigente').select('id, nombre, marca, categoria, stock, proveedor, precio_publico, url_imagen, descripcion')
+    supabase.from('vista_catalogo_vigente').select('id, nombre, marca, categoria, stock, proveedor, precio_publico, url_imagen, descripcion, sku')
       .then(({ data }) => {
         setProducts((data as Product[]) || []);
         setLoading(false);
