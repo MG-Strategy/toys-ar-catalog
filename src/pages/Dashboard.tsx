@@ -1005,9 +1005,6 @@ const Dashboard = () => {
                             SKU: {p.sku}
                           </div>
                         )}
-                        <div className="text-[10px]" style={{ color: MUTED }}>
-                          Código: {p.codigo_proveedor || '—'}
-                        </div>
                       </li>
                     ))}
                   </ul>
