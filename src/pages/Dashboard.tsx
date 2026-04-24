@@ -70,7 +70,7 @@ const Badge = ({ children, color, bg }: { children: React.ReactNode; color: stri
   </span>
 );
 
-type ProductoOpt = { id: string; nombre: string; codigo_proveedor?: string | null };
+type ProductoOpt = { id: string; nombre: string; codigo_proveedor?: string | null; sku?: string | null };
 
 const formatFechaCorta = (iso: string) => {
   if (!iso) return '';
@@ -342,7 +342,7 @@ const Dashboard = () => {
   const [showPendientes, setShowPendientes] = useState(false);
   const [pendientes, setPendientes] = useState<any[]>([]);
   const [loadingPendientes, setLoadingPendientes] = useState(false);
-  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string }[]>([]);
+  const [stockAll, setStockAll] = useState<{ id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string; sku: string | null }[]>([]);
   const [stockSearch, setStockSearch] = useState('');
   const [stockFilter, setStockFilter] = useState<'todos' | 'sin' | 'critico' | 'bajo' | 'en'>('todos');
   const [cotizacionesFechas, setCotizacionesFechas] = useState<string[]>([]);
@@ -429,7 +429,7 @@ const Dashboard = () => {
       const [catRes, histRes] = await Promise.all([
         supabase
           .from('vista_catalogo_vigente')
-          .select('id, nombre')
+          .select('id, nombre, sku')
           .order('nombre', { ascending: true }),
         supabase
           .from('vista_historico_precios')
@@ -447,7 +447,7 @@ const Dashboard = () => {
       for (const r of (catRes.data as any[]) || []) {
         if (!r?.id || !r?.nombre || seen.has(r.id)) continue;
         seen.add(r.id);
-        opts.push({ id: r.id, nombre: r.nombre, codigo_proveedor: codigoMap.get(r.id) ?? null });
+        opts.push({ id: r.id, nombre: r.nombre, codigo_proveedor: codigoMap.get(r.id) ?? null, sku: r.sku ?? null });
       }
       setProductos(opts);
       setShowResults(true);
@@ -499,7 +499,8 @@ const Dashboard = () => {
     return productos.filter(
       (p) =>
         p.nombre.toLowerCase().includes(q) ||
-        (p.codigo_proveedor || '').toLowerCase().includes(q)
+        (p.codigo_proveedor || '').toLowerCase().includes(q) ||
+        (p.sku || '').toLowerCase().includes(q)
     );
   }, [search, productos]);
 
@@ -660,12 +661,12 @@ const Dashboard = () => {
     (async () => {
       const { data, error } = await supabase
         .from('vista_catalogo_vigente')
-        .select('id, nombre, stock, proveedor, categoria, marca')
+        .select('id, nombre, stock, proveedor, categoria, marca, sku')
         .order('nombre', { ascending: true });
       if (error) { setErr('stockAll', true); return; }
       if (data) {
         const seen = new Set<string>();
-        const arr: { id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string }[] = [];
+        const arr: { id: string; nombre: string; stock: number; proveedor: string; categoria: string; marca: string; sku: string | null }[] = [];
         for (const r of data as any[]) {
           if (!r?.id || seen.has(r.id)) continue;
           seen.add(r.id);
@@ -676,6 +677,7 @@ const Dashboard = () => {
             proveedor: r.proveedor ?? '—',
             categoria: r.categoria ?? '—',
             marca: r.marca ?? '—',
+            sku: r.sku ?? null,
           });
         }
         setStockAll(arr);
@@ -782,9 +784,10 @@ const Dashboard = () => {
     if (!selectedProducto || historico.length === 0) return;
     downloadCSV(
       `juguetear_precios_${slugify(selectedProducto.nombre)}_${todayStamp()}.csv`,
-      ['nombre', 'codigo_proveedor', 'fecha_precio', 'precio_proveedor', 'precio_publico', 'margen_porcentaje', 'proveedor'],
+      ['nombre', 'sku', 'codigo_proveedor', 'fecha_precio', 'precio_proveedor', 'precio_publico', 'margen_porcentaje', 'proveedor'],
       historico.map((r: any) => [
         r.nombre ?? selectedProducto.nombre,
+        r.sku ?? selectedProducto.sku ?? '',
         r.codigo_proveedor ?? '',
         r.fecha_precio ?? '',
         r.precio_proveedor ?? '',
@@ -810,12 +813,12 @@ const Dashboard = () => {
     );
   };
 
-  const exportStock = (rows: { nombre: string; proveedor: string; stock: number; categoria: string; marca: string }[]) => {
+  const exportStock = (rows: { nombre: string; proveedor: string; stock: number; categoria: string; marca: string; sku: string | null }[]) => {
     if (rows.length === 0) return;
     downloadCSV(
       `juguetear_stock_${todayStamp()}.csv`,
-      ['nombre', 'proveedor', 'stock', 'estado_stock', 'categoria', 'marca'],
-      rows.map((p) => [p.nombre, p.proveedor, p.stock, estadoStockLabel(p.stock), p.categoria, p.marca])
+      ['nombre', 'sku', 'proveedor', 'stock', 'estado_stock', 'categoria', 'marca'],
+      rows.map((p) => [p.nombre, p.sku ?? '', p.proveedor, p.stock, estadoStockLabel(p.stock), p.categoria, p.marca])
     );
   };
 
@@ -997,6 +1000,11 @@ const Dashboard = () => {
                         style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}
                       >
                         <div className="text-sm font-medium">{p.nombre}</div>
+                        {p.sku && (
+                          <div className="text-[11px]" style={{ color: MUTED }}>
+                            SKU: {p.sku}
+                          </div>
+                        )}
                         <div className="text-[10px]" style={{ color: MUTED }}>
                           Código: {p.codigo_proveedor || '—'}
                         </div>
@@ -1125,7 +1133,10 @@ const Dashboard = () => {
               };
               const filtered = stockAll
                 .filter((p) => {
-                  if (stockSearch && !p.nombre.toLowerCase().includes(stockSearch.toLowerCase())) return false;
+                  if (stockSearch) {
+                    const q = stockSearch.toLowerCase();
+                    if (!p.nombre.toLowerCase().includes(q) && !(p.sku || '').toLowerCase().includes(q)) return false;
+                  }
                   if (stockFilter === 'todos') return true;
                   return getEstado(p.stock).key === stockFilter;
                 })
@@ -1153,7 +1164,7 @@ const Dashboard = () => {
                   <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                     <input
                       type="text"
-                      placeholder="Buscar por nombre..."
+                      placeholder="Buscar por nombre o SKU..."
                       value={stockSearch}
                       onChange={(e) => setStockSearch(e.target.value)}
                       className="px-3 py-2 rounded-md text-sm w-full sm:w-72 outline-none"
@@ -1184,6 +1195,7 @@ const Dashboard = () => {
                       <thead>
                         <tr style={{ color: MUTED, background: BG, borderBottom: `1px solid ${BORDER}` }}>
                           <th className="text-left py-2 px-3 font-medium">Producto</th>
+                          <th className="text-left py-2 px-3 font-medium">SKU</th>
                           <th className="text-left py-2 px-3 font-medium">Proveedor</th>
                           <th className="text-right py-2 px-3 font-medium">Stock</th>
                           <th className="text-left py-2 px-3 font-medium">Estado</th>
@@ -1195,6 +1207,7 @@ const Dashboard = () => {
                           return (
                             <tr key={p.id} style={{ borderBottom: `1px solid ${BORDER}`, color: TEXT }}>
                               <td className="py-2 px-3">{p.nombre}</td>
+                              <td className="py-2 px-3" style={{ color: MUTED, fontSize: 11 }}>{p.sku || '—'}</td>
                               <td className="py-2 px-3" style={{ color: MUTED }}>{p.proveedor}</td>
                               <td className="py-2 px-3 text-right font-semibold">{p.stock}</td>
                               <td className="py-2 px-3"><Badge color={est.color} bg={est.bg}>{est.label}</Badge></td>
@@ -1202,7 +1215,7 @@ const Dashboard = () => {
                           );
                         })}
                         {filtered.length === 0 && (
-                          <tr><td colSpan={4} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin resultados</td></tr>
+                          <tr><td colSpan={5} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin resultados</td></tr>
                         )}
                       </tbody>
                     </table>
