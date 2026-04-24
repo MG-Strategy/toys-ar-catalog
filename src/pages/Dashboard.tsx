@@ -144,15 +144,14 @@ const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reg
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<SimProducto | null>(null);
   const [precios, setPrecios] = useState<{ precio_proveedor: number; precio_publico: number } | null>(null);
-  const [cf, setCf] = useState(0);
-  const [cv, setCv] = useState(0);
   const [mg, setMg] = useState(0);
   const [touched, setTouched] = useState(false);
 
+  const cf = defaults.cf;
+  const cv = defaults.cv;
+
   useEffect(() => {
     if (!touched) {
-      setCf(defaults.cf);
-      setCv(defaults.cv);
       setMg(defaults.mg);
     }
   }, [defaults, touched]);
