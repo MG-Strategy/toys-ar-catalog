@@ -151,7 +151,7 @@ const Cotizar = () => {
               </tfoot>
             </table>
             <div className="p-4 border-t border-border text-center">
-              <p className="text-sm text-muted-foreground font-medium italic">* Los precios pueden variar al momento de confirmar</p>
+              <p className="text-sm text-muted-foreground font-medium italic">* Los precios tienen validez de 48 horas desde la emisión de esta cotización.</p>
             </div>
           </div>
 
