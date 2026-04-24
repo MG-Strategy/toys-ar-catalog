@@ -16,6 +16,7 @@ interface Product {
   precio_publico: number;
   url_imagen?: string | null;
   descripcion?: string | null;
+  sku?: string | null;
 }
 
 const Catalogo = () => {
