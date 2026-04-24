@@ -14,6 +14,7 @@ interface Product {
   precio_publico: number;
   url_imagen?: string | null;
   descripcion?: string | null;
+  sku?: string | null;
 }
 
 const categoryBorderColors: Record<string, string> = {
@@ -44,7 +45,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   };
 
   const handleIncrease = () => {
-    if (qty === 0) addItem({ id: product.id, nombre: product.nombre, precio_publico: product.precio_publico });
+    if (qty === 0) addItem({ id: product.id, nombre: product.nombre, precio_publico: product.precio_publico, sku: product.sku ?? null });
     else updateQuantity(product.id, qty + 1);
   };
 
@@ -74,6 +75,9 @@ const ProductCard = ({ product }: { product: Product }) => {
             {getDisplayName(product.categoria)}
           </span>
         </div>
+        {product.sku && (
+          <p className="text-muted-foreground/70" style={{ fontSize: '11px' }}>SKU: {product.sku}</p>
+        )}
         {product.descripcion && (
           <p className="text-xs text-muted-foreground line-clamp-2">{product.descripcion}</p>
         )}
@@ -109,7 +113,7 @@ const ProductCard = ({ product }: { product: Product }) => {
           ) : (
             <button
               disabled={!inStock}
-              onClick={() => addItem({ id: product.id, nombre: product.nombre, precio_publico: product.precio_publico })}
+              onClick={() => addItem({ id: product.id, nombre: product.nombre, precio_publico: product.precio_publico, sku: product.sku ?? null })}
               className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" /> Agregar a cotización
