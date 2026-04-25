@@ -17,6 +17,7 @@ const FloatingChatButton = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [flowDone, setFlowDone] = useState(false);
   const [flowPayload, setFlowPayload] = useState<any>(null);
+  const [downloaded, setDownloaded] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +75,8 @@ const FloatingChatButton = () => {
   };
 
   const handleAction = async (action: "download" | "email") => {
+    if (downloaded) return;
+    setDownloaded(true);
     setIsTyping(true);
 
     try {
@@ -120,6 +123,7 @@ const FloatingChatButton = () => {
           setFlowDone(false);
           setFlowPayload(null);
           setSessionId(genId());
+          setDownloaded(false);
         }, 1000);
       }, 3000);
     } catch (error) {
@@ -212,9 +216,10 @@ const FloatingChatButton = () => {
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => handleAction("download")}
-                      className="bg-[#1565C0] text-white py-2.5 px-4 rounded-xl text-[13.5px] font-bold transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-2"
+                      disabled={downloaded || isTyping}
+                      className="bg-[#1565C0] text-white py-2.5 px-4 rounded-xl text-[13.5px] font-bold transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-2 disabled:bg-[#B0BEC5] disabled:cursor-not-allowed disabled:active:scale-100 disabled:hover:opacity-100"
                     >
-                      ⬇ Descargar cotización
+                      {downloaded ? "✅ Descargado" : "⬇ Descargar cotización"}
                     </button>
                   </div>
                 </div>
