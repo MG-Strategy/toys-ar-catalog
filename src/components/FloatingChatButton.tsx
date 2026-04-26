@@ -102,7 +102,7 @@ const FloatingChatButton = () => {
         const a = document.createElement("a");
         a.href = url;
 
-        a.download = `cotizacion_${cotizaciónIDformateada}.pdf`;
+        a.download = `Presupuesto_${cotizaciónIDformateada}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
