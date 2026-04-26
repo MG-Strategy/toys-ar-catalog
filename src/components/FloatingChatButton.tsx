@@ -87,7 +87,8 @@ const FloatingChatButton = () => {
           setIsTyping(false);
           return;
         }
-
+        //Formato del ID de la cotización para el cliente
+        const cotizaciónIDformateada = String(cotizacionId).slice(0, 8).toUpperCase();
         const res = await fetch(`https://g4bn4t-n8n.duckdns.org/webhook/descargar_cotizacion?id=${cotizacionId}`, {
           method: "GET",
           //headers: { "Content-Type": "application/json" },
@@ -100,7 +101,8 @@ const FloatingChatButton = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `cotizacion_${cotizacionId}.pdf`;
+
+        a.download = `cotizacion_${cotizaciónIDformateada}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
