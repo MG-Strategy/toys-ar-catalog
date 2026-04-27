@@ -454,19 +454,20 @@ const Dashboard = () => {
   // Cotizaciones por canal (bar)
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.from('cotizaciones_globales').select('canal');
+      const { data, error } = await supabase.from('vista_cotizaciones_canal').select('canal, total');
       if (error) { setErr('canales', true); return; }
       if (data) {
-        const counts: Record<string, number> = { web: 0, chatbot: 0 };
-        data.forEach((r: any) => {
-          const raw = (r.canal || '').toString().trim().toLowerCase().replace(/\s+/g, '');
-          if (raw === 'chatbot') counts.chatbot += 1;
-          else if (raw === 'web') counts.web += 1;
-        });
         setCanales(
-          (['web', 'chatbot'] as const)
-            .filter((k) => counts[k] > 0)
-            .map((k) => ({ name: k, value: counts[k] }))
+          (data as any[])
+            .filter((r) => {
+              const c = (r.canal || '').toString().trim().toLowerCase();
+              return c && c !== 'sin_canal';
+            })
+            .map((r) => ({
+              name: (r.canal || '').toString().trim().toLowerCase(),
+              value: Number(r.total) || 0,
+            }))
+            .filter((r) => r.value > 0)
         );
       }
     })();
