@@ -231,7 +231,7 @@ const SimuladorPricing = ({ reglas }: { reglas: any[] }) => {
         )
       );
       setMargenSlider(Math.round(newMargen * 100));
-      toast.success(`✓ Margen diferencial actualizado para ${selected.nombre}`);
+      toast.success('✓ Margen diferencial actualizado');
     } catch (e: any) {
       setErrMsg(e?.message || 'Error al aplicar el cambio');
     } finally {
