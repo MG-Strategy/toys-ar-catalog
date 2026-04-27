@@ -590,80 +590,94 @@ const Dashboard = () => {
     })();
   }, []);
 
-  // Clientes frecuentes (desde misma vista) + email/telefono + categoría favorita
+  // Clientes frecuentes (desde vistas accesibles a anon: vista_ranking_productos + vista_historial_cliente)
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
         .from('vista_ranking_productos')
-        .select('cliente_frecuente, total_cotizaciones_cliente')
+        .select('cliente_frecuente, total_cotizaciones_cliente, nombre, categoria')
         .order('total_cotizaciones_cliente', { ascending: false });
       if (error) { setErr('clientes', true); return; }
-      if (data) {
-        const seen = new Set<string>();
-        const dedup: any[] = [];
-        for (const r of data as any[]) {
-          if (!r.cliente_frecuente) continue;
-          if (seen.has(r.cliente_frecuente)) continue;
-          seen.add(r.cliente_frecuente);
-          dedup.push(r);
-          if (dedup.length >= 10) break;
-        }
-        const nombres = dedup.map((d) => d.cliente_frecuente);
-        let contactMap = new Map<string, { email: string | null; telefono: string | null; id: string | null }>();
-        if (nombres.length > 0) {
-          const { data: usrs } = await supabase
-            .from('usuarios')
-            .select('id, nombre_completo, email, telefono')
-            .in('nombre_completo', nombres);
-          for (const u of (usrs as any[]) || []) {
-            if (u?.nombre_completo && !contactMap.has(u.nombre_completo)) {
-              contactMap.set(u.nombre_completo, {
-                email: u.email ?? null,
-                telefono: u.telefono ?? null,
-                id: u.id ?? null,
-              });
-            }
-          }
-        }
+      if (!data) return;
 
-        // Categoría favorita por cliente
-        const userIds = Array.from(contactMap.values()).map((v) => v.id).filter(Boolean) as string[];
-        const favByUserId = new Map<string, string>();
-        if (userIds.length > 0) {
-          const { data: cps } = await supabase
-            .from('cotizacion_productos')
-            .select('cantidad_productos, productos!inner(categoria), cotizaciones_globales!inner(id_usuario)')
-            .in('cotizaciones_globales.id_usuario', userIds);
-          const counts = new Map<string, Map<string, number>>(); // userId -> categoria -> veces
-          for (const r of (cps as any[]) || []) {
-            const uid = r?.cotizaciones_globales?.id_usuario;
-            const cat = r?.productos?.categoria;
-            if (!uid || !cat) continue;
-            if (!counts.has(uid)) counts.set(uid, new Map());
-            const m = counts.get(uid)!;
-            m.set(cat, (m.get(cat) || 0) + 1);
-          }
-          for (const [uid, m] of counts.entries()) {
-            let bestCat = '', bestN = -1;
-            for (const [cat, n] of m.entries()) {
-              if (n > bestN) { bestN = n; bestCat = cat; }
-            }
-            if (bestCat) favByUserId.set(uid, bestCat);
-          }
-        }
-
-        setClientes(
-          dedup.map((d) => {
-            const ct = contactMap.get(d.cliente_frecuente);
-            return {
-              ...d,
-              email: ct?.email ?? null,
-              telefono: ct?.telefono ?? null,
-              categoria_favorita: ct?.id ? favByUserId.get(ct.id) ?? null : null,
-            };
-          })
-        );
+      // Dedupe top 10 clientes por total_cotizaciones_cliente
+      const seen = new Set<string>();
+      const dedup: any[] = [];
+      for (const r of data as any[]) {
+        if (!r.cliente_frecuente) continue;
+        if (seen.has(r.cliente_frecuente)) continue;
+        seen.add(r.cliente_frecuente);
+        dedup.push(r);
+        if (dedup.length >= 10) break;
       }
+      const nombres = dedup.map((d) => d.cliente_frecuente);
+
+      // Contactos (email/telefono) desde vista_historial_cliente
+      const contactMap = new Map<string, { email: string | null; telefono: string | null }>();
+      if (nombres.length > 0) {
+        const { data: hist } = await supabase
+          .from('vista_historial_cliente')
+          .select('nombre_completo, email, telefono')
+          .in('nombre_completo', nombres);
+        for (const u of (hist as any[]) || []) {
+          if (!u?.nombre_completo) continue;
+          const prev = contactMap.get(u.nombre_completo);
+          // Mantener primer registro con email/teléfono no nulo
+          if (!prev) {
+            contactMap.set(u.nombre_completo, { email: u.email ?? null, telefono: u.telefono ?? null });
+          } else {
+            contactMap.set(u.nombre_completo, {
+              email: prev.email ?? u.email ?? null,
+              telefono: prev.telefono ?? u.telefono ?? null,
+            });
+          }
+        }
+      }
+
+      // Categoría favorita: cruzar historial (nombre_producto + cantidad) con ranking (nombre -> categoria)
+      const prodToCat = new Map<string, string>();
+      for (const r of data as any[]) {
+        if (r?.nombre && r?.categoria && !prodToCat.has(r.nombre)) {
+          prodToCat.set(r.nombre, r.categoria);
+        }
+      }
+      const favByCliente = new Map<string, string>();
+      if (nombres.length > 0) {
+        const { data: histProds } = await supabase
+          .from('vista_historial_cliente')
+          .select('nombre_completo, nombre_producto, cantidad_productos')
+          .in('nombre_completo', nombres)
+          .not('nombre_producto', 'is', null);
+        const counts = new Map<string, Map<string, number>>(); // cliente -> categoria -> unidades
+        for (const r of (histProds as any[]) || []) {
+          const cliente = r?.nombre_completo;
+          const cat = r?.nombre_producto ? prodToCat.get(r.nombre_producto) : null;
+          if (!cliente || !cat) continue;
+          if (!counts.has(cliente)) counts.set(cliente, new Map());
+          const m = counts.get(cliente)!;
+          m.set(cat, (m.get(cat) || 0) + (r.cantidad_productos || 1));
+        }
+        for (const [cliente, m] of counts.entries()) {
+          let bestCat = '', bestN = -1;
+          for (const [cat, n] of m.entries()) {
+            if (n > bestN) { bestN = n; bestCat = cat; }
+          }
+          if (bestCat) favByCliente.set(cliente, bestCat);
+        }
+      }
+
+      setClientes(
+        dedup.map((d) => {
+          const ct = contactMap.get(d.cliente_frecuente);
+          return {
+            cliente_frecuente: d.cliente_frecuente,
+            total_cotizaciones_cliente: d.total_cotizaciones_cliente,
+            email: ct?.email ?? null,
+            telefono: ct?.telefono ?? null,
+            categoria_favorita: favByCliente.get(d.cliente_frecuente) ?? null,
+          };
+        })
+      );
     })();
   }, []);
 
