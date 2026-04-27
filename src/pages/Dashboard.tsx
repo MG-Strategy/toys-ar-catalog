@@ -688,7 +688,7 @@ const Dashboard = () => {
     (async () => {
       const { data, error } = await supabase
         .from('vista_ranking_productos')
-        .select('categoria, veces_cotizado, cantidad_total_pedida');
+        .select('categoria, veces_cotizado, total_unidades_cotizadas');
       if (error) { setErr('categoriasPedidas', true); return; }
       const acc = new Map<string, { veces_pedida: number; unidades_totales: number }>();
       for (const r of (data as any[]) || []) {
@@ -696,7 +696,7 @@ const Dashboard = () => {
         if (!cat) continue;
         const cur = acc.get(cat) || { veces_pedida: 0, unidades_totales: 0 };
         cur.veces_pedida += Number(r.veces_cotizado || 0);
-        cur.unidades_totales += Number(r.cantidad_total_pedida || 0);
+        cur.unidades_totales += Number(r.total_unidades_cotizadas || 0);
         acc.set(cat, cur);
       }
       const arr = Array.from(acc.entries())
