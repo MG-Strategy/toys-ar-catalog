@@ -126,9 +126,16 @@ const exportBtnStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-type SimProducto = { id: string; nombre: string; precio_proveedor?: number; precio_publico?: number };
+type SimProducto = {
+  id: string;
+  nombre: string;
+  marca?: string | null;
+  precio_proveedor: number;
+  precio_publico: number;
+  margen_diferencial: number;
+};
 
-const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reglas: any[] }) => {
+const SimuladorPricing = ({ reglas }: { reglas: any[] }) => {
   const defaults = useMemo(() => {
     const get = (tipo: string) => {
       const r = reglas.find((x: any) => x.tipo_regla === tipo && x.activo);
@@ -142,63 +149,95 @@ const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reg
     };
   }, [reglas]);
 
-  const [search, setSearch] = useState('');
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<SimProducto | null>(null);
-  const [precios, setPrecios] = useState<{ precio_proveedor: number; precio_publico: number } | null>(null);
-  const [mg, setMg] = useState(0);
-  const [touched, setTouched] = useState(false);
-
   const cf = defaults.cf;
   const cv = defaults.cv;
+  const mg = defaults.mg;
 
-  useEffect(() => {
-    if (!touched) {
-      setMg(defaults.mg);
-    }
-  }, [defaults, touched]);
+  const [items, setItems] = useState<SimProducto[]>([]);
+  const [selectedId, setSelectedId] = useState<string>('');
+  const [margenSlider, setMargenSlider] = useState(0); // percent units, e.g. 10 = +10%
+  const [applying, setApplying] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
-  // Auto select first product
+  // Load products with vigente price
   useEffect(() => {
-    if (!selected && productos.length > 0) {
-      setSelected({ id: productos[0].id, nombre: productos[0].nombre });
-    }
-  }, [productos, selected]);
-
-  // Load precio_proveedor + precio_publico for selected
-  useEffect(() => {
-    if (!selected) return;
     (async () => {
-      const { data } = await supabase
-        .from('vista_catalogo_vigente')
-        .select('precio_proveedor, precio_publico')
-        .eq('id', selected.id)
-        .maybeSingle();
-      if (data) {
-        setPrecios({
-          precio_proveedor: Number((data as any).precio_proveedor || 0),
-          precio_publico: Number((data as any).precio_publico || 0),
-        });
-      } else {
-        setPrecios(null);
+      const { data, error } = await supabase
+        .from('precios')
+        .select('precio_proveedor, precio_publico, margen_diferencial, productos:id_producto(id, nombre, marca)')
+        .eq('es_precio_vigente', true);
+      if (error || !data) return;
+      const list: SimProducto[] = (data as any[])
+        .filter((r) => r.productos)
+        .map((r) => ({
+          id: r.productos.id,
+          nombre: r.productos.nombre,
+          marca: r.productos.marca,
+          precio_proveedor: Number(r.precio_proveedor || 0),
+          precio_publico: Number(r.precio_publico || 0),
+          margen_diferencial: Number(r.margen_diferencial || 0),
+        }))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre));
+      setItems(list);
+      if (list.length > 0 && !selectedId) {
+        setSelectedId(list[0].id);
+        setMargenSlider(Math.round(list[0].margen_diferencial * 100));
       }
     })();
-  }, [selected]);
+  }, []);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return productos.slice(0, 50);
-    return productos.filter((p) => p.nombre.toLowerCase().includes(q)).slice(0, 50);
-  }, [search, productos]);
+  const selected = useMemo(() => items.find((x) => x.id === selectedId) || null, [items, selectedId]);
 
-  const proveedor = precios?.precio_proveedor ?? 0;
-  const publicoActual = precios?.precio_publico ?? 0;
-  const factor = 1 + cf / 100 + cv / 100 + mg / 100;
-  const simulado = proveedor * factor;
+  // When product changes, reset slider to its saved margen_diferencial
+  useEffect(() => {
+    if (selected) {
+      setMargenSlider(Math.round(selected.margen_diferencial * 100));
+      setErrMsg(null);
+    }
+  }, [selectedId]);
+
+  const proveedor = selected?.precio_proveedor ?? 0;
+  const publicoActual = selected?.precio_publico ?? 0;
+  const margenGuardadoPct = selected ? Math.round(selected.margen_diferencial * 100) : 0;
+
+  // Simulated price uses DB formula: proveedor * 2.00 * (1 + margenDiferencial)
+  const simulado = proveedor * 2.0 * (1 + margenSlider / 100);
   const diff = simulado - publicoActual;
   const diffPct = publicoActual > 0 ? (diff / publicoActual) * 100 : 0;
 
-  const sliderClass = "[&_[role=slider]]:border-[#1565C0] [&>:first-child>:first-child]:bg-[#1565C0] [&>:first-child]:bg-[#1e293b]";
+  const sliderClassReadOnly = "opacity-50 [&_[role=slider]]:border-[#64748b] [&>:first-child>:first-child]:bg-[#64748b] [&>:first-child]:bg-[#1e293b]";
+  const sliderClassMargen = "[&_[role=slider]]:border-[#F97316] [&>:first-child>:first-child]:bg-[#F97316] [&>:first-child]:bg-[#1e293b]";
+
+  const hasChange = selected ? margenSlider !== margenGuardadoPct : false;
+
+  const handleApply = async () => {
+    if (!selected || !hasChange || applying) return;
+    setApplying(true);
+    setErrMsg(null);
+    try {
+      const { data, error } = await supabase.rpc('admin_set_margen_diferencial', {
+        p_id_producto: selected.id,
+        p_margen_diferencial: margenSlider / 100,
+      });
+      if (error) throw error;
+      const row: any = Array.isArray(data) ? data[0] : data;
+      const newPublico = Number(row?.precio_publico ?? simulado);
+      const newMargen = Number(row?.margen_diferencial ?? margenSlider / 100);
+      setItems((prev) =>
+        prev.map((p) =>
+          p.id === selected.id
+            ? { ...p, precio_publico: newPublico, margen_diferencial: newMargen }
+            : p
+        )
+      );
+      setMargenSlider(Math.round(newMargen * 100));
+      toast.success(`✓ Margen diferencial actualizado para ${selected.nombre}`);
+    } catch (e: any) {
+      setErrMsg(e?.message || 'Error al aplicar el cambio');
+    } finally {
+      setApplying(false);
+    }
+  };
 
   return (
     <section>
@@ -208,35 +247,22 @@ const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reg
           {/* LEFT: selector + sliders */}
           <div>
             <label className="text-xs font-semibold mb-1 block" style={{ color: MUTED }}>Producto</label>
-            <div className="relative mb-4">
-              <input
-                type="text"
-                value={selected ? selected.nombre : search}
-                onChange={(e) => { setSearch(e.target.value); setSelected(null); setOpen(true); }}
-                onFocus={() => setOpen(true)}
-                onBlur={() => setTimeout(() => setOpen(false), 150)}
-                placeholder="Buscar producto…"
-                className="w-full px-3 py-2 rounded-md text-sm outline-none"
-                style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
-              />
-              {open && filtered.length > 0 && (
-                <div
-                  className="absolute z-10 w-full mt-1 rounded-md max-h-60 overflow-y-auto"
-                  style={{ background: CARD, border: `1px solid ${BORDER}` }}
+            <div className="mb-4">
+              <Select value={selectedId} onValueChange={setSelectedId}>
+                <SelectTrigger
+                  className="w-full"
+                  style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
                 >
-                  {filtered.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onMouseDown={() => { setSelected({ id: p.id, nombre: p.nombre }); setSearch(''); setOpen(false); }}
-                      className="w-full text-left px-3 py-2 text-sm hover:opacity-80"
-                      style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}
-                    >
-                      {p.nombre}
-                    </button>
+                  <SelectValue placeholder="Seleccionar producto…" />
+                </SelectTrigger>
+                <SelectContent style={{ background: CARD, border: `1px solid ${BORDER}`, color: TEXT }}>
+                  {items.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nombre}{p.marca ? ` — ${p.marca}` : ''}
+                    </SelectItem>
                   ))}
-                </div>
-              )}
+                </SelectContent>
+              </Select>
             </div>
 
             {selected && (
@@ -249,34 +275,47 @@ const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reg
             )}
 
             <div className="space-y-5">
-              <div className="space-y-1">
-                <div className="text-xs" style={{ color: MUTED }}>Costo Fijo: {cf}% (fijo)</div>
-                <div className="text-xs" style={{ color: MUTED }}>Costo Variable: {cv}% (fijo)</div>
+              {/* Read-only rules */}
+              <div>
+                <div className="flex justify-between mb-2 text-sm opacity-60">
+                  <span style={{ color: TEXT }}>Costo Fijo (fijo)</span>
+                  <span className="font-semibold" style={{ color: MUTED }}>{cf}%</span>
+                </div>
+                <Slider value={[cf]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
               </div>
               <div>
+                <div className="flex justify-between mb-2 text-sm opacity-60">
+                  <span style={{ color: TEXT }}>Costo Variable (fijo)</span>
+                  <span className="font-semibold" style={{ color: MUTED }}>{cv}%</span>
+                </div>
+                <Slider value={[cv]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
+              </div>
+              <div>
+                <div className="flex justify-between mb-2 text-sm opacity-60">
+                  <span style={{ color: TEXT }}>Margen de Ganancia (fijo)</span>
+                  <span className="font-semibold" style={{ color: MUTED }}>{mg}%</span>
+                </div>
+                <Slider value={[mg]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
+              </div>
+
+              {/* Interactive Margen Diferencial */}
+              <div>
                 <div className="flex justify-between mb-2 text-sm">
-                  <span style={{ color: TEXT }}>Margen de Ganancia</span>
-                  <span className="font-semibold" style={{ color: BLUE }}>{mg}%</span>
+                  <span style={{ color: TEXT }}>Margen Diferencial</span>
+                  <span className="font-semibold" style={{ color: '#F97316' }}>
+                    {margenSlider > 0 ? '+' : ''}{margenSlider}%
+                  </span>
                 </div>
                 <Slider
-                  value={[mg]}
-                  min={0}
+                  value={[margenSlider]}
+                  min={-50}
                   max={100}
                   step={1}
-                  onValueChange={(v) => { setMg(v[0]); setTouched(true); }}
-                  className={sliderClass}
+                  onValueChange={(v) => setMargenSlider(v[0])}
+                  className={sliderClassMargen}
+                  disabled={!selected}
                 />
               </div>
-              {touched && (
-                <button
-                  type="button"
-                  onClick={() => setTouched(false)}
-                  className="text-xs underline"
-                  style={{ color: MUTED }}
-                >
-                  Restablecer valores por defecto
-                </button>
-              )}
             </div>
           </div>
 
@@ -309,11 +348,38 @@ const SimuladorPricing = ({ productos, reglas }: { productos: ProductoOpt[]; reg
                   </div>
                 </div>
               </div>
+              <div className="text-xs" style={{ color: MUTED }}>
+                Margen diferencial actual guardado en DB:{' '}
+                <span className="font-semibold">
+                  {margenGuardadoPct > 0 ? '+' : ''}{margenGuardadoPct}%
+                </span>
+              </div>
             </div>
 
-            <p className="text-xs mt-5" style={{ color: '#f97316' }}>
-              ⚠️ Este simulador es solo de visualización. No modifica los precios reales del sistema.
-            </p>
+            <div className="mt-5">
+              <button
+                type="button"
+                onClick={handleApply}
+                disabled={!hasChange || applying || !selected}
+                className="w-full py-2.5 rounded-md font-semibold text-sm transition-colors"
+                style={{
+                  background: !hasChange || applying || !selected ? '#475569' : '#22C55E',
+                  color: '#fff',
+                  cursor: !hasChange || applying || !selected ? 'not-allowed' : 'pointer',
+                  opacity: !hasChange || applying || !selected ? 0.7 : 1,
+                }}
+              >
+                {applying ? 'Aplicando…' : 'Aplicar cambio de precio'}
+              </button>
+              {errMsg && (
+                <p className="text-xs mt-2" style={{ color: '#ef4444' }}>
+                  {errMsg}
+                </p>
+              )}
+              <p className="text-xs mt-3" style={{ color: MUTED }}>
+                El margen diferencial se aplica sobre el precio base calculado por las reglas de negocio. Un valor de 0% no genera ajuste.
+              </p>
+            </div>
           </div>
         </div>
       </Card>
