@@ -387,7 +387,9 @@ const SimuladorPricing = ({ reglas }: { reglas: any[] }) => {
   );
 };
 
-const Dashboard = () => {
+type DashboardUser = { auth_user_id: string; nombre_completo: string | null; activo: boolean } | null;
+
+const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) => {
   const [kpis, setKpis] = useState<KPIs>({});
   const [estados, setEstados] = useState<{ name: string; value: number }[]>([]);
   const [canales, setCanales] = useState<{ name: string; value: number }[]>([]);
