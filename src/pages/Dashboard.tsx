@@ -945,14 +945,17 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
       if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
       return new Date(iso);
     };
-    let mes = 0, semana = 0, totalMes = 0;
+    let mes = 0, semana = 0, historico = 0;
+    let totalMes = 0, totalSemana = 0, totalHistorico = 0;
     for (const r of cotizacionesRows) {
       const d = parseLocal(r.fecha);
       if (isNaN(d.getTime())) continue;
+      historico += 1;
+      totalHistorico += r.total;
       if (d >= startMonth) { mes += 1; totalMes += r.total; }
-      if (d >= startWeek) semana += 1;
+      if (d >= startWeek) { semana += 1; totalSemana += r.total; }
     }
-    return { mes, semana, totalMes };
+    return { mes, semana, historico, totalMes, totalSemana, totalHistorico };
   }, [cotizacionesRows]);
 
   // Ticket promedio SEMANAL — calculado desde cotizacionesRows
