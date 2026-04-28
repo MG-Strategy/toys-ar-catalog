@@ -57,8 +57,8 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-lg font-semibold mb-4" style={{ color: TEXT }}>{children}</h2>
 );
 
-const SectionHeader = ({ emoji, title, question }: { emoji: string; title: string; question: string }) => (
-  <div className="pt-4 border-t" style={{ borderColor: BORDER }}>
+const SectionHeader = ({ id, emoji, title, question }: { id?: string; emoji: string; title: string; question: string }) => (
+  <div id={id} className="pt-4 border-t scroll-mt-24" style={{ borderColor: BORDER }}>
     <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: TEXT }}>
       <span>{emoji}</span>
       <span>{title}</span>
@@ -66,6 +66,41 @@ const SectionHeader = ({ emoji, title, question }: { emoji: string; title: strin
     <p className="text-sm mt-1" style={{ color: MUTED }}>{question}</p>
   </div>
 );
+
+const SectionNav = () => {
+  const items = [
+    { id: 'sec-resumen', label: '📊 Resumen' },
+    { id: 'sec-actividad', label: '📈 Actividad' },
+    { id: 'sec-productos', label: '🛒 Productos' },
+    { id: 'sec-marketing', label: '🎯 Marketing' },
+    { id: 'sec-pricing', label: '💰 Pricing' },
+    { id: 'sec-stock', label: '📦 Stock' },
+    { id: 'sec-admin', label: '⚙️ Administración' },
+  ];
+  const go = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  return (
+    <nav
+      className="sticky top-0 z-40 -mx-4 px-4 py-2 mb-4 backdrop-blur"
+      style={{ background: 'rgba(15,23,42,0.85)', borderBottom: `1px solid ${BORDER}` }}
+    >
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        {items.map((it) => (
+          <button
+            key={it.id}
+            onClick={() => go(it.id)}
+            className="whitespace-nowrap text-xs sm:text-sm px-3 py-1.5 rounded-full transition-colors hover:opacity-90"
+            style={{ background: '#1e293b', color: TEXT, border: `1px solid ${BORDER}` }}
+          >
+            {it.label}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+};
 
 const ErrorMsg = () => (
   <p className="text-center py-6 text-sm" style={{ color: '#f97316' }}>
@@ -1751,37 +1786,39 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
           <div style={{ borderBottom: `1px solid ${BORDER}` }} />
         </header>
 
+         <SectionNav />
+
         {/* 📊 RESUMEN EJECUTIVO */}
-        <SectionHeader emoji="📊" title="RESUMEN EJECUTIVO" question="¿Cómo estamos?" />
+        <SectionHeader id="sec-resumen" emoji="📊" title="RESUMEN EJECUTIVO" question="¿Cómo estamos?" />
         {sectionKPIs}
 
         {/* 📈 ACTIVIDAD COMERCIAL */}
-        <SectionHeader emoji="📈" title="ACTIVIDAD COMERCIAL" question="¿Cómo va la actividad?" />
+        <SectionHeader id="sec-actividad" emoji="📈" title="ACTIVIDAD COMERCIAL" question="¿Cómo va la actividad?" />
         {sectionCotizacionesDia}
         {sectionDiaSemana}
         {sectionCanal}
         {sectionTicket}
 
         {/* 🛒 PRODUCTOS MÁS COTIZADOS */}
-        <SectionHeader emoji="🛒" title="PRODUCTOS MÁS COTIZADOS" question="¿Qué se vende?" />
+        <SectionHeader id="sec-productos" emoji="🛒" title="PRODUCTOS MÁS COTIZADOS" question="¿Qué se vende?" />
         {sectionRanking}
 
         {/* 🎯 INTELIGENCIA DE MARKETING */}
-        <SectionHeader emoji="🎯" title="INTELIGENCIA DE MARKETING" question="¿A quién y qué le gusta?" />
+        <SectionHeader id="sec-marketing" emoji="🎯" title="INTELIGENCIA DE MARKETING" question="¿A quién y qué le gusta?" />
         {sectionCategorias}
         {sectionClientes}
 
         {/* 💰 ANÁLISIS DE PRICING */}
-        <SectionHeader emoji="💰" title="ANÁLISIS DE PRICING" question="¿A qué precio?" />
+        <SectionHeader id="sec-pricing" emoji="💰" title="ANÁLISIS DE PRICING" question="¿A qué precio?" />
         {sectionHistorico}
         <SimuladorPricing reglas={reglas} />
 
         {/* 📦 STOCK E INVENTARIO */}
-        <SectionHeader emoji="📦" title="STOCK E INVENTARIO" question="¿Tenemos para vender?" />
+        <SectionHeader id="sec-stock" emoji="📦" title="STOCK E INVENTARIO" question="¿Tenemos para vender?" />
         {sectionStock}
 
         {/* ⚙️ ADMINISTRACIÓN */}
-        <SectionHeader emoji="⚙️" title="ADMINISTRACIÓN" question="¿Quién maneja el sistema?" />
+        <SectionHeader id="sec-admin" emoji="⚙️" title="ADMINISTRACIÓN" question="¿Quién maneja el sistema?" />
         {sectionReglas}
         {sectionEquipo}
 
