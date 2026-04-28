@@ -486,12 +486,12 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     (async () => {
       const { data, error } = await supabase
         .from('cotizaciones_globales')
-        .select('fecha_cotizacion, total_ars');
+        .select('fecha_cotizacion, total');
       if (error) { setErr('cotizaciones', true); return; }
       if (data) {
         const rows = (data as any[])
           .filter((r) => r.fecha_cotizacion)
-          .map((r) => ({ fecha: r.fecha_cotizacion as string, total: Number(r.total_ars || 0) }));
+          .map((r) => ({ fecha: r.fecha_cotizacion as string, total: Number(r.total || 0) }));
         setCotizacionesRows(rows);
         setCotizacionesFechas(rows.map((r) => r.fecha));
       }
@@ -940,14 +940,54 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     const startWeek = new Date(now);
     startWeek.setDate(now.getDate() - 6);
     startWeek.setHours(0, 0, 0, 0);
+    const parseLocal = (iso: string): Date => {
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return new Date(iso);
+    };
     let mes = 0, semana = 0, totalMes = 0;
     for (const r of cotizacionesRows) {
-      const d = new Date(r.fecha);
+      const d = parseLocal(r.fecha);
       if (isNaN(d.getTime())) continue;
       if (d >= startMonth) { mes += 1; totalMes += r.total; }
       if (d >= startWeek) semana += 1;
     }
     return { mes, semana, totalMes };
+  }, [cotizacionesRows]);
+
+  // Ticket promedio SEMANAL — calculado desde cotizacionesRows
+  const ticketPromedioSemanal = useMemo(() => {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const parseLocal = (iso: string): Date => {
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return new Date(iso);
+    };
+    // Inicio de semana = lunes local
+    const startOfWeek = (d: Date): Date => {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dow = (x.getDay() + 6) % 7; // 0 = lunes
+      x.setDate(x.getDate() - dow);
+      return x;
+    };
+    const buckets = new Map<string, { sortKey: number; mes_label: string; suma: number; cantidad: number }>();
+    for (const r of cotizacionesRows) {
+      const d = parseLocal(r.fecha);
+      if (isNaN(d.getTime())) continue;
+      const ws = startOfWeek(d);
+      const key = `${ws.getFullYear()}-${ws.getMonth()}-${ws.getDate()}`;
+      const label = `${ws.getDate()} ${meses[ws.getMonth()]}`;
+      const cur = buckets.get(key);
+      if (cur) { cur.suma += r.total; cur.cantidad += 1; }
+      else buckets.set(key, { sortKey: ws.getTime(), mes_label: label, suma: r.total, cantidad: 1 });
+    }
+    return Array.from(buckets.values())
+      .sort((a, b) => a.sortKey - b.sortKey)
+      .map((b) => ({
+        mes_label: b.mes_label,
+        ticket_promedio: b.cantidad > 0 ? b.suma / b.cantidad : 0,
+        cantidad_cotizaciones: b.cantidad,
+      }));
   }, [cotizacionesRows]);
 
   // ============ Section JSX blocks (defined here, rendered in order below) ============
@@ -1109,13 +1149,13 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
   const sectionTicket = (
     <section>
       <Card>
-        <SectionTitle>Evolución del ticket promedio</SectionTitle>
-        {errors.ticketPromedio ? (
+        <SectionTitle>Evolución del ticket promedio (semanal)</SectionTitle>
+        {errors.ticketPromedio && ticketPromedioSemanal.length === 0 ? (
           <ErrorMsg />
         ) : (
           <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
-              <LineChart data={ticketPromedio} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
+              <LineChart data={ticketPromedioSemanal} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
                 <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
                 <XAxis dataKey="mes_label" stroke={MUTED} />
                 <YAxis
