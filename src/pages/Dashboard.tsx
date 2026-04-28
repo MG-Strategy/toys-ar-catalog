@@ -922,13 +922,28 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
   return (
     <div style={{ background: BG, minHeight: '100vh', color: TEXT, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }}>
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <header className="flex items-center justify-between">
+        <header className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold" style={{ color: TEXT }}>JugueteAR · Dashboard</h1>
             <p style={{ color: MUTED }} className="text-sm mt-1">Panel interno de control</p>
           </div>
-          <div className="text-xs px-3 py-1 rounded-full" style={{ background: CARD, border: `1px solid ${BORDER}`, color: MUTED }}>
-            modo administrador
+          <div className="flex items-center gap-3">
+            {dashboardUser?.nombre_completo && (
+              <div className="text-sm px-3 py-1.5 rounded-full"
+                   style={{ background: CARD, border: `1px solid ${BORDER}`, color: TEXT }}>
+                {dashboardUser.nombre_completo}
+              </div>
+            )}
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = '/login';
+              }}
+              className="text-sm px-3 py-1.5 rounded-md font-medium transition-opacity hover:opacity-90"
+              style={{ background: BLUE, color: '#fff' }}
+            >
+              Cerrar sesión
+            </button>
           </div>
         </header>
 
