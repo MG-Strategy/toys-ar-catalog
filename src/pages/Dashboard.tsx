@@ -1758,6 +1758,7 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
         {/* 📈 ACTIVIDAD COMERCIAL */}
         <SectionHeader emoji="📈" title="ACTIVIDAD COMERCIAL" question="¿Cómo va la actividad?" />
         {sectionCotizacionesDia}
+        {sectionDiaSemana}
         {sectionCanal}
         {sectionTicket}
 
