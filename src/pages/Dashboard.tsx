@@ -837,15 +837,15 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
       return 1 + Math.round((diff - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
     };
 
-    const buckets = new Map<string, { label: string; sortKey: number; total: number }>();
+    const buckets = new Map<string, { label: string; sortKey: number; total: number; monto: number }>();
     const parseLocal = (iso: string): Date => {
       // Soporta 'YYYY-MM-DD' y 'YYYY-MM-DDTHH:mm:ss...' interpretándolos en zona local
       const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
       if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
       return new Date(iso);
     };
-    for (const iso of cotizacionesFechas) {
-      const d = parseLocal(iso);
+    for (const r of cotizacionesRows) {
+      const d = parseLocal(r.fecha);
       if (isNaN(d.getTime()) || d < from) continue;
       let key = '', label = '', sortKey = 0;
       if (groupBy === 'day') {
@@ -863,11 +863,11 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
         sortKey = d.getFullYear() * 12 + d.getMonth();
       }
       const cur = buckets.get(key);
-      if (cur) cur.total += 1;
-      else buckets.set(key, { label, sortKey, total: 1 });
+      if (cur) { cur.total += 1; cur.monto += r.total; }
+      else buckets.set(key, { label, sortKey, total: 1, monto: r.total });
     }
     return Array.from(buckets.values()).sort((a, b) => a.sortKey - b.sortKey);
-  }, [cotizacionesFechas, cotPeriodo]);
+  }, [cotizacionesRows, cotPeriodo]);
 
   const estadoStockLabel = (s: number) => {
     if (s === 0) return 'Sin stock';
