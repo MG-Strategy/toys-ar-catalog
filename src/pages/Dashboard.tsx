@@ -1550,13 +1550,16 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
         {/* HERO */}
         <header className="space-y-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight" style={{ color: TEXT }}>
-                JugueteAR · Dashboard Comercial
-              </h1>
-              <p style={{ color: MUTED }} className="text-sm mt-2">
-                Panel de control en tiempo real · Análisis de ventas, productos y pricing
-              </p>
+            <div className="flex items-center gap-4">
+              <span className="text-5xl leading-none" aria-hidden="true">🧸</span>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight" style={{ color: TEXT }}>
+                  JugueteAR · Dashboard Comercial
+                </h1>
+                <p style={{ color: MUTED }} className="text-sm mt-2">
+                  Panel de control en tiempo real · Análisis de ventas, productos y pricing
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               {dashboardUser?.nombre_completo && (
