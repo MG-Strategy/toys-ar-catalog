@@ -1168,6 +1168,59 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     </section>
   );
 
+  // Cotizaciones por día de la semana (Lun-Dom)
+  const cotizacionesPorDiaSemana = useMemo(() => {
+    const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const buckets = dias.map((d) => ({ dia: d, total: 0, monto: 0 }));
+    const parseLocal = (iso: string): Date => {
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return new Date(iso);
+    };
+    for (const r of cotizacionesRows) {
+      const d = parseLocal(r.fecha);
+      if (isNaN(d.getTime())) continue;
+      const idx = (d.getDay() + 6) % 7; // Lunes = 0
+      buckets[idx].total += 1;
+      buckets[idx].monto += r.total;
+    }
+    return buckets;
+  }, [cotizacionesRows]);
+
+  const sectionDiaSemana = (
+    <section>
+      <Card>
+        <SectionTitle>Cotizaciones por día de la semana</SectionTitle>
+        <div style={{ width: '100%', height: 320 }}>
+          <ResponsiveContainer>
+            <BarChart data={cotizacionesPorDiaSemana} margin={{ top: 24, right: 24, left: 0, bottom: 8 }}>
+              <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+              <XAxis dataKey="dia" stroke={MUTED} />
+              <YAxis yAxisId="left" stroke={BLUE} allowDecimals={false} />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                stroke={YELLOW}
+                tickFormatter={(v: number) => {
+                  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+                  if (v >= 1_000) return `$${Math.round(v / 1000)}k`;
+                  return `$${v}`;
+                }}
+              />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                formatter={(v: any, name: any) => name === 'Monto cotizado' ? [formatARS(Number(v)), name] : [v, name]}
+              />
+              <Bar yAxisId="left" dataKey="total" fill={BLUE} radius={[6, 6, 0, 0]} name="Cotizaciones" />
+              <Bar yAxisId="right" dataKey="monto" fill={YELLOW} radius={[6, 6, 0, 0]} name="Monto cotizado" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </section>
+  );
+
   const sectionCanal = (
     <section>
       <Card>
@@ -1705,6 +1758,7 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
         {/* 📈 ACTIVIDAD COMERCIAL */}
         <SectionHeader emoji="📈" title="ACTIVIDAD COMERCIAL" question="¿Cómo va la actividad?" />
         {sectionCotizacionesDia}
+        {sectionDiaSemana}
         {sectionCanal}
         {sectionTicket}
 
