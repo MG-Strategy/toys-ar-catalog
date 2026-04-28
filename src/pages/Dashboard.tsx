@@ -275,27 +275,22 @@ const SimuladorPricing = ({ reglas }: { reglas: any[] }) => {
             )}
 
             <div className="space-y-5">
-              {/* Read-only rules */}
-              <div>
-                <div className="flex justify-between mb-2 text-sm opacity-60">
-                  <span style={{ color: TEXT }}>Costo Fijo (fijo)</span>
-                  <span className="font-semibold" style={{ color: MUTED }}>{cf}%</span>
+              {/* Info box: business rules in effect */}
+              <div
+                className="p-3 rounded-md text-xs leading-relaxed"
+                style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+              >
+                <div className="font-semibold mb-1" style={{ color: TEXT }}>
+                  ℹ Reglas de negocio vigentes
                 </div>
-                <Slider value={[cf]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
-              </div>
-              <div>
-                <div className="flex justify-between mb-2 text-sm opacity-60">
-                  <span style={{ color: TEXT }}>Costo Variable (fijo)</span>
-                  <span className="font-semibold" style={{ color: MUTED }}>{cv}%</span>
+                <div style={{ color: MUTED }}>
+                  Costo Fijo <span className="font-semibold" style={{ color: BLUE }}>{cf}%</span>
+                  {' · '}Costo Variable <span className="font-semibold" style={{ color: BLUE }}>{cv}%</span>
+                  {' · '}Margen Ganancia <span className="font-semibold" style={{ color: BLUE }}>{mg}%</span>
                 </div>
-                <Slider value={[cv]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
-              </div>
-              <div>
-                <div className="flex justify-between mb-2 text-sm opacity-60">
-                  <span style={{ color: TEXT }}>Margen de Ganancia (fijo)</span>
-                  <span className="font-semibold" style={{ color: MUTED }}>{mg}%</span>
+                <div className="mt-1" style={{ color: MUTED }}>
+                  → Estas reglas se aplican automáticamente
                 </div>
-                <Slider value={[mg]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
               </div>
 
               {/* Interactive Margen Diferencial */}
