@@ -1149,13 +1149,13 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
   const sectionTicket = (
     <section>
       <Card>
-        <SectionTitle>Evolución del ticket promedio</SectionTitle>
-        {errors.ticketPromedio ? (
+        <SectionTitle>Evolución del ticket promedio (semanal)</SectionTitle>
+        {errors.ticketPromedio && ticketPromedioSemanal.length === 0 ? (
           <ErrorMsg />
         ) : (
           <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
-              <LineChart data={ticketPromedio} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
+              <LineChart data={ticketPromedioSemanal} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
                 <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
                 <XAxis dataKey="mes_label" stroke={MUTED} />
                 <YAxis
