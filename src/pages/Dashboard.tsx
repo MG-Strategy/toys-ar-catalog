@@ -57,6 +57,16 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-lg font-semibold mb-4" style={{ color: TEXT }}>{children}</h2>
 );
 
+const SectionHeader = ({ emoji, title, question }: { emoji: string; title: string; question: string }) => (
+  <div className="pt-4 border-t" style={{ borderColor: BORDER }}>
+    <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: TEXT }}>
+      <span>{emoji}</span>
+      <span>{title}</span>
+    </h2>
+    <p className="text-sm mt-1" style={{ color: MUTED }}>{question}</p>
+  </div>
+);
+
 const ErrorMsg = () => (
   <p className="text-center py-6 text-sm" style={{ color: '#f97316' }}>
     ⚠️ Error al cargar los datos. Intentá recargar.
@@ -275,27 +285,22 @@ const SimuladorPricing = ({ reglas }: { reglas: any[] }) => {
             )}
 
             <div className="space-y-5">
-              {/* Read-only rules */}
-              <div>
-                <div className="flex justify-between mb-2 text-sm opacity-60">
-                  <span style={{ color: TEXT }}>Costo Fijo (fijo)</span>
-                  <span className="font-semibold" style={{ color: MUTED }}>{cf}%</span>
+              {/* Info box: business rules in effect */}
+              <div
+                className="p-3 rounded-md text-xs leading-relaxed"
+                style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+              >
+                <div className="font-semibold mb-1" style={{ color: TEXT }}>
+                  ℹ Reglas de negocio vigentes
                 </div>
-                <Slider value={[cf]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
-              </div>
-              <div>
-                <div className="flex justify-between mb-2 text-sm opacity-60">
-                  <span style={{ color: TEXT }}>Costo Variable (fijo)</span>
-                  <span className="font-semibold" style={{ color: MUTED }}>{cv}%</span>
+                <div style={{ color: MUTED }}>
+                  Costo Fijo <span className="font-semibold" style={{ color: BLUE }}>{cf}%</span>
+                  {' · '}Costo Variable <span className="font-semibold" style={{ color: BLUE }}>{cv}%</span>
+                  {' · '}Margen Ganancia <span className="font-semibold" style={{ color: BLUE }}>{mg}%</span>
                 </div>
-                <Slider value={[cv]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
-              </div>
-              <div>
-                <div className="flex justify-between mb-2 text-sm opacity-60">
-                  <span style={{ color: TEXT }}>Margen de Ganancia (fijo)</span>
-                  <span className="font-semibold" style={{ color: MUTED }}>{mg}%</span>
+                <div className="mt-1" style={{ color: MUTED }}>
+                  → Estas reglas se aplican automáticamente
                 </div>
-                <Slider value={[mg]} min={0} max={100} step={1} disabled className={sliderClassReadOnly} />
               </div>
 
               {/* Interactive Margen Diferencial */}
@@ -413,6 +418,7 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
   const [stockSearch, setStockSearch] = useState('');
   const [stockFilter, setStockFilter] = useState<'todos' | 'sin' | 'critico' | 'bajo' | 'en'>('todos');
   const [cotizacionesFechas, setCotizacionesFechas] = useState<string[]>([]);
+  const [cotizacionesRows, setCotizacionesRows] = useState<{ fecha: string; total: number }[]>([]);
   const [cotChartType, setCotChartType] = useState<'bar' | 'line'>('bar');
   const [cotPeriodo, setCotPeriodo] = useState<'7d' | '30d' | '3m' | '1y'>('30d');
   const [ticketPromedio, setTicketPromedio] = useState<{ mes_label: string; ticket_promedio: number; cantidad_cotizaciones: number }[]>([]);
@@ -480,12 +486,14 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     (async () => {
       const { data, error } = await supabase
         .from('cotizaciones_globales')
-        .select('fecha_cotizacion');
+        .select('fecha_cotizacion, total_ars');
       if (error) { setErr('cotizaciones', true); return; }
       if (data) {
-        setCotizacionesFechas(
-          (data as any[]).map((r) => r.fecha_cotizacion).filter(Boolean)
-        );
+        const rows = (data as any[])
+          .filter((r) => r.fecha_cotizacion)
+          .map((r) => ({ fecha: r.fecha_cotizacion as string, total: Number(r.total_ars || 0) }));
+        setCotizacionesRows(rows);
+        setCotizacionesFechas(rows.map((r) => r.fecha));
       }
     })();
   }, []);
@@ -919,621 +927,708 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     );
   };
 
+  // Hero stats: month / week / total month
+  const heroStats = useMemo(() => {
+    const now = new Date();
+    const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startWeek = new Date(now);
+    startWeek.setDate(now.getDate() - 6);
+    startWeek.setHours(0, 0, 0, 0);
+    let mes = 0, semana = 0, totalMes = 0;
+    for (const r of cotizacionesRows) {
+      const d = new Date(r.fecha);
+      if (isNaN(d.getTime())) continue;
+      if (d >= startMonth) { mes += 1; totalMes += r.total; }
+      if (d >= startWeek) semana += 1;
+    }
+    return { mes, semana, totalMes };
+  }, [cotizacionesRows]);
+
+  // ============ Section JSX blocks (defined here, rendered in order below) ============
+
+  const sectionKPIs = (
+    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card>
+        <div className="text-sm" style={{ color: MUTED }}>📋 Total cotizaciones</div>
+        <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>
+          {kpis.total_cotizaciones ?? 0}
+        </div>
+      </Card>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={openPendientes}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openPendientes(); }}
+        className="rounded-2xl border p-5 cursor-pointer transition hover:opacity-90"
+        style={{ background: CARD, borderColor: BORDER }}
+      >
+        <div className="text-sm flex items-center justify-between" style={{ color: MUTED }}>
+          <span>⏳ Pendientes</span>
+          <span className="text-[10px] uppercase tracking-wide" style={{ color: MUTED }}>ver detalle →</span>
+        </div>
+        <div
+          className="text-3xl font-bold mt-2"
+          style={{ color: pendientesAlta ? YELLOW : TEXT }}
+        >
+          {kpis.cotizaciones_pendientes ?? 0}
+        </div>
+      </div>
+      <Card>
+        <div className="text-sm" style={{ color: MUTED }}>💰 Valor total cotizado</div>
+        <div className="text-2xl font-bold mt-2" style={{ color: BLUE }}>
+          {formatARS(kpis.valor_total_cotizado || 0)}
+        </div>
+      </Card>
+      <Card>
+        <div className="text-sm" style={{ color: MUTED }}>⚡ Tiempo respuesta promedio</div>
+        <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>
+          {formatTiempoRespuesta(kpis.tiempo_respuesta_promedio_minutos ?? kpis.tiempo_respuesta_promedio)}
+        </div>
+      </Card>
+    </section>
+  );
+
+  const sectionCotizacionesDia = (
+    <section>
+      <Card>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <SectionTitle>Cotizaciones por día</SectionTitle>
+            {errors.cotizaciones && <ErrorMsg />}
+          <div className="flex flex-wrap gap-2">
+            {([
+              { k: 'bar', label: 'Barras' },
+              { k: 'line', label: 'Línea' },
+            ] as const).map((b) => {
+              const active = cotChartType === b.k;
+              return (
+                <button
+                  key={b.k}
+                  onClick={() => setCotChartType(b.k)}
+                  className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                  style={{
+                    background: active ? BLUE : BG,
+                    color: active ? '#fff' : TEXT,
+                    border: `1px solid ${active ? BLUE : BORDER}`,
+                  }}
+                >
+                  {b.label}
+                </button>
+              );
+            })}
+            <span className="mx-1" style={{ color: BORDER }}>|</span>
+            {([
+              { k: '7d', label: '7 días' },
+              { k: '30d', label: '30 días' },
+              { k: '3m', label: '3 meses' },
+              { k: '1y', label: '1 año' },
+            ] as const).map((p) => {
+              const active = cotPeriodo === p.k;
+              return (
+                <button
+                  key={p.k}
+                  onClick={() => setCotPeriodo(p.k)}
+                  className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                  style={{
+                    background: active ? BLUE : BG,
+                    color: active ? '#fff' : TEXT,
+                    border: `1px solid ${active ? BLUE : BORDER}`,
+                  }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{ width: '100%', height: 300 }}>
+          <ResponsiveContainer>
+            {cotChartType === 'bar' ? (
+              <BarChart data={cotizacionesData}>
+                <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
+                <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="total" fill={BLUE} name="Cotizaciones" />
+              </BarChart>
+            ) : (
+              <LineChart data={cotizacionesData}>
+                <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
+                <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke={YELLOW}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: YELLOW, stroke: YELLOW }}
+                  activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                  name="Cotizaciones"
+                />
+              </LineChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </section>
+  );
+
+  const sectionCanal = (
+    <section>
+      <Card>
+        <SectionTitle>Cotizaciones por canal</SectionTitle>
+        {errors.canales ? (
+          <ErrorMsg />
+        ) : (
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <BarChart data={canales} margin={{ top: 24, right: 16, left: 0, bottom: 8 }}>
+                <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                <XAxis dataKey="name" stroke={MUTED} />
+                <YAxis stroke={MUTED} allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} formatter={(v: any) => [v, 'Cantidad']} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: TEXT, fontSize: 12, fontWeight: 700 }}>
+                  {canales.map((c, i) => (
+                    <Cell key={i} fill={c.name?.toLowerCase() === 'web' ? BLUE : c.name?.toLowerCase() === 'chatbot' ? YELLOW : '#64748b'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
+    </section>
+  );
+
+  const sectionTicket = (
+    <section>
+      <Card>
+        <SectionTitle>Evolución del ticket promedio</SectionTitle>
+        {errors.ticketPromedio ? (
+          <ErrorMsg />
+        ) : (
+          <div style={{ width: '100%', height: 320 }}>
+            <ResponsiveContainer>
+              <LineChart data={ticketPromedio} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
+                <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+                <XAxis dataKey="mes_label" stroke={MUTED} />
+                <YAxis
+                  stroke={MUTED}
+                  tickFormatter={(v: number) =>
+                    `$ ${Number(v || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
+                  }
+                  width={100}
+                />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  cursor={{ stroke: BORDER }}
+                  labelFormatter={(label: any) => String(label)}
+                  formatter={(value: any, name: any) => {
+                    if (name === 'ticket_promedio') return [formatARS(Number(value)), 'Ticket promedio'];
+                    return [value, name];
+                  }}
+                  content={({ active, payload, label }: any) => {
+                    if (!active || !payload || !payload.length) return null;
+                    const p = payload[0].payload;
+                    return (
+                      <div style={{ ...tooltipStyle, padding: '8px 12px' }}>
+                        <div style={{ color: TEXT, fontWeight: 600, marginBottom: 4 }}>{label}</div>
+                        <div style={{ color: '#22c55e', fontSize: 13 }}>
+                          Ticket promedio: {formatARS(p.ticket_promedio)}
+                        </div>
+                        <div style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
+                          Cotizaciones: {p.cantidad_cotizaciones}
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="ticket_promedio"
+                  stroke="#22c55e"
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: '#22c55e', stroke: '#22c55e' }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
+    </section>
+  );
+
+  const sectionRanking = (
+    <section>
+      <Card>
+        <SectionTitle>Ranking de productos más cotizados</SectionTitle>
+        {errors.ranking && <ErrorMsg />}
+        <div style={{ width: '100%', height: Math.max(320, ranking.length * 36) }}>
+          <ResponsiveContainer>
+            <BarChart data={ranking} layout="vertical" margin={{ left: 40, right: 30 }}>
+              <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+              <XAxis type="number" stroke={MUTED} tick={{ fontSize: 11 }} />
+              <YAxis type="category" dataKey="nombre" stroke={MUTED} width={160} tick={{ fontSize: 11 }} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Legend wrapperStyle={{ color: TEXT }} />
+              <Bar dataKey="veces_cotizado" fill={BLUE} name="Veces cotizado" />
+              <Bar dataKey="total_unidades_cotizadas" fill={YELLOW} name="Unidades cotizadas" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </section>
+  );
+
+  const sectionCategorias = (
+    <section>
+      <Card>
+        <SectionTitle>Categorías más pedidas</SectionTitle>
+        <p className="text-xs mb-4" style={{ color: MUTED }}>Útil para campañas de marketing</p>
+        {errors.categoriasPedidas && <ErrorMsg />}
+        <div style={{ width: '100%', height: Math.max(260, categoriasPedidas.length * 44) }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={categoriasPedidas}
+              layout="vertical"
+              margin={{ top: 8, right: 24, left: 24, bottom: 8 }}
+            >
+              <CartesianGrid stroke={BORDER} strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" stroke={MUTED} tick={{ fill: MUTED, fontSize: 12 }} />
+              <YAxis
+                type="category"
+                dataKey="categoria"
+                stroke={MUTED}
+                tick={{ fill: TEXT, fontSize: 12 }}
+                width={140}
+              />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              <Legend wrapperStyle={{ color: TEXT }} />
+              <Bar dataKey="veces_pedida" fill={BLUE} name="Veces pedida" />
+              <Bar dataKey="unidades_totales" fill={YELLOW} name="Unidades totales" />
+            </BarChart>
+          </ResponsiveContainer>
+          {categoriasPedidas.length === 0 && !errors.categoriasPedidas && (
+            <p className="py-4 text-center text-sm" style={{ color: MUTED }}>Sin datos</p>
+          )}
+        </div>
+      </Card>
+    </section>
+  );
+
+  const sectionClientes = (
+    <section>
+      <Card>
+        <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
+          <SectionTitle>Clientes frecuentes</SectionTitle>
+          {errors.clientes && <ErrorMsg />}
+          <button
+            onClick={exportClientes}
+            disabled={clientes.length === 0}
+            style={{ ...exportBtnStyle, opacity: clientes.length === 0 ? 0.5 : 1 }}
+          >
+            ↓ Exportar CSV
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
+                <th className="text-left py-2 px-3">Nombre</th>
+                <th className="text-left py-2 px-3">Email</th>
+                <th className="text-left py-2 px-3">Teléfono</th>
+                <th className="text-left py-2 px-3">Categoría favorita</th>
+                <th className="text-right py-2 px-3">Total cotizaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clientes.map((c, i) => {
+                const catColors: Record<string, { bg: string; color: string }> = {
+                  Didacticos: { bg: '#1565C0', color: '#fff' },
+                  Muñecas: { bg: '#9333ea', color: '#fff' },
+                  Accion: { bg: '#f97316', color: '#fff' },
+                  'Juegos de Mesa': { bg: '#16a34a', color: '#fff' },
+                  Bebes: { bg: '#ec4899', color: '#fff' },
+                  bebes: { bg: '#ec4899', color: '#fff' },
+                  Vehiculos: { bg: '#06b6d4', color: '#0f172a' },
+                };
+                const cat = c.categoria_favorita;
+                const cc = cat ? catColors[cat] : null;
+                return (
+                  <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <td className="py-2 px-3">{c.cliente_frecuente}</td>
+                    <td className="py-2 px-3" style={{ color: MUTED }}>{c.email ?? '—'}</td>
+                    <td className="py-2 px-3" style={{ color: MUTED }}>{c.telefono ?? '—'}</td>
+                    <td className="py-2 px-3">
+                      {cat ? (
+                        <Badge color={cc?.color ?? '#fff'} bg={cc?.bg ?? '#64748b'}>{cat}</Badge>
+                      ) : (
+                        <span style={{ color: MUTED }}>—</span>
+                      )}
+                    </td>
+                    <td className="py-2 px-3 text-right font-semibold">{c.total_cotizaciones_cliente}</td>
+                  </tr>
+                );
+              })}
+              {clientes.length === 0 && (
+                <tr><td colSpan={5} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin datos</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </section>
+  );
+
+  const sectionHistorico = (
+    <section>
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <SectionTitle>Histórico de precios</SectionTitle>
+          {errors.historico && <ErrorMsg />}
+          <button
+            onClick={exportHistorico}
+            disabled={!selectedProducto || historico.length === 0}
+            style={{ ...exportBtnStyle, opacity: !selectedProducto || historico.length === 0 ? 0.5 : 1 }}
+          >
+            ↓ Exportar CSV
+          </button>
+        </div>
+        <div className="mb-4 flex items-center gap-3 flex-wrap">
+          <div className="relative" style={{ minWidth: 280 }}>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setShowResults(true); }}
+              onFocus={() => setShowResults(true)}
+              onBlur={() => setTimeout(() => setShowResults(false), 150)}
+              placeholder={selectedProducto?.nombre || 'Buscar por nombre o código...'}
+              className="w-full px-3 py-2 rounded-lg text-sm"
+              style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+            />
+            {showResults && filteredProductos.length > 0 && (
+              <ul
+                className="absolute z-10 mt-1 w-full max-h-64 overflow-auto rounded-lg text-sm"
+                style={{ background: CARD, border: `1px solid ${BORDER}` }}
+              >
+                {filteredProductos.map((p) => (
+                  <li
+                    key={p.id}
+                    onMouseDown={() => {
+                      setSelectedProducto(p);
+                      setSearch('');
+                      setShowResults(false);
+                    }}
+                    className="px-3 py-2 cursor-pointer hover:opacity-80"
+                    style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}
+                  >
+                    <div className="text-sm font-medium">{p.nombre}</div>
+                    {p.sku && (
+                      <div className="text-[11px]" style={{ color: MUTED }}>
+                        SKU: {p.sku}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {margenActual != null && (
+            <Badge color="#0f172a" bg={YELLOW}>
+              Margen actual: {Number(margenActual).toFixed(2)}%
+            </Badge>
+          )}
+          {stockBadge()}
+        </div>
+        <div style={{ width: '100%', height: 400 }}>
+          <ResponsiveContainer>
+            <LineChart data={historico}>
+              <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+              <XAxis dataKey="fecha_label" stroke={MUTED} tick={{ fontSize: 11 }} />
+              <YAxis stroke={MUTED} tick={{ fontSize: 11 }} />
+              <Tooltip contentStyle={tooltipStyle} labelFormatter={(l) => String(l)} />
+              <Legend wrapperStyle={{ color: TEXT }} />
+              <Line type="monotone" dataKey="precio_publico" stroke={BLUE} strokeWidth={2} dot={{ r: 3, fill: BLUE, stroke: BLUE }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Precio público" />
+              <Line type="monotone" dataKey="precio_proveedor" stroke={YELLOW} strokeWidth={2} dot={{ r: 3, fill: YELLOW, stroke: YELLOW }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Precio proveedor" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </section>
+  );
+
+  const sectionStock = (() => {
+    const getEstado = (s: number) => {
+      if (s === 0) return { key: 'sin', label: 'Sin stock', bg: '#ef4444', color: '#fff' };
+      if (s <= 10) return { key: 'critico', label: 'Stock crítico', bg: '#f97316', color: '#fff' };
+      if (s <= 50) return { key: 'bajo', label: 'Stock bajo', bg: YELLOW, color: '#0f172a' };
+      return { key: 'en', label: 'En stock', bg: '#16a34a', color: '#fff' };
+    };
+    const filtered = stockAll
+      .filter((p) => {
+        if (stockSearch) {
+          const q = stockSearch.toLowerCase();
+          if (!p.nombre.toLowerCase().includes(q) && !(p.sku || '').toLowerCase().includes(q)) return false;
+        }
+        if (stockFilter === 'todos') return true;
+        return getEstado(p.stock).key === stockFilter;
+      })
+      .sort((a, b) => a.stock - b.stock);
+    const filters: { key: typeof stockFilter; label: string }[] = [
+      { key: 'todos', label: 'Todos' },
+      { key: 'sin', label: 'Sin stock' },
+      { key: 'critico', label: 'Stock crítico' },
+      { key: 'bajo', label: 'Stock bajo' },
+      { key: 'en', label: 'En stock' },
+    ];
+    return (
+      <section>
+        <Card>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
+              <SectionTitle>Estado de stock</SectionTitle>
+              {errors.stockAll && <ErrorMsg />}
+              <button
+                onClick={() => exportStock(filtered)}
+                disabled={filtered.length === 0}
+                style={{ ...exportBtnStyle, opacity: filtered.length === 0 ? 0.5 : 1 }}
+              >
+                ↓ Exportar CSV
+              </button>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <input
+                type="text"
+                placeholder="Buscar por nombre o SKU..."
+                value={stockSearch}
+                onChange={(e) => setStockSearch(e.target.value)}
+                className="px-3 py-2 rounded-md text-sm w-full sm:w-72 outline-none"
+                style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+              />
+              <div className="flex flex-wrap gap-2">
+                {filters.map((f) => {
+                  const active = stockFilter === f.key;
+                  return (
+                    <button
+                      key={f.key}
+                      onClick={() => setStockFilter(f.key)}
+                      className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                      style={{
+                        background: active ? BLUE : BG,
+                        color: active ? '#fff' : TEXT,
+                        border: `1px solid ${active ? BLUE : BORDER}`,
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${BORDER}` }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ color: MUTED, background: BG, borderBottom: `1px solid ${BORDER}` }}>
+                    <th className="text-left py-2 px-3 font-medium">Producto</th>
+                    <th className="text-left py-2 px-3 font-medium">SKU</th>
+                    <th className="text-left py-2 px-3 font-medium">Proveedor</th>
+                    <th className="text-right py-2 px-3 font-medium">Stock</th>
+                    <th className="text-left py-2 px-3 font-medium">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p) => {
+                    const est = getEstado(p.stock);
+                    return (
+                      <tr key={p.id} style={{ borderBottom: `1px solid ${BORDER}`, color: TEXT }}>
+                        <td className="py-2 px-3">{p.nombre}</td>
+                        <td className="py-2 px-3" style={{ color: MUTED, fontSize: 11 }}>{p.sku || '—'}</td>
+                        <td className="py-2 px-3" style={{ color: MUTED }}>{p.proveedor}</td>
+                        <td className="py-2 px-3 text-right font-semibold">{p.stock}</td>
+                        <td className="py-2 px-3"><Badge color={est.color} bg={est.bg}>{est.label}</Badge></td>
+                      </tr>
+                    );
+                  })}
+                  {filtered.length === 0 && (
+                    <tr><td colSpan={5} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin resultados</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Card>
+      </section>
+    );
+  })();
+
+  const sectionReglas = (
+    <section>
+      <Card>
+        <SectionTitle>Reglas de negocio vigentes</SectionTitle>
+        {errors.reglas && <ErrorMsg />}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
+                <th className="text-left py-2 px-3">Nombre</th>
+                <th className="text-left py-2 px-3">Tipo</th>
+                <th className="text-right py-2 px-3">Valor</th>
+                <th className="text-left py-2 px-3">Descripción</th>
+                <th className="text-left py-2 px-3">Vigente desde</th>
+                <th className="text-center py-2 px-3">Activo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reglas.map((r: any, i) => {
+                const tipoMap: Record<string, string> = {
+                  costo_fijo: 'Costo Fijo',
+                  costo_variable: 'Costo Variable',
+                  margen_ganancia: 'Margen de Ganancia',
+                };
+                const tipoLabel = tipoMap[r.tipo_regla] ?? (r.tipo_regla ?? '—');
+                const valorNum = Number(r.valor);
+                const valorLabel = isNaN(valorNum) ? '—' : `${Math.round(valorNum * 100)}%`;
+                return (
+                  <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <td className="py-2 px-3">{r.nombre_regla}</td>
+                    <td className="py-2 px-3">{tipoLabel}</td>
+                    <td className="py-2 px-3 text-right">{valorLabel}</td>
+                    <td className="py-2 px-3 text-xs" style={{ color: MUTED }}>{r.descripcion ?? '—'}</td>
+                    <td className="py-2 px-3">{r.fecha_vigencia ? formatFechaCorta(r.fecha_vigencia) : '—'}</td>
+                    <td className="py-2 px-3 text-center">{activoBadge(!!r.activo)}</td>
+                  </tr>
+                );
+              })}
+              {reglas.length === 0 && (
+                <tr><td colSpan={6} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin reglas</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </section>
+  );
+
+  const sectionEquipo = (
+    <section>
+      <Card>
+        <SectionTitle>Equipo con acceso al sistema</SectionTitle>
+        {errors.equipo && <ErrorMsg />}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
+                <th className="text-left py-2 px-3">Nombre</th>
+                <th className="text-left py-2 px-3">Email</th>
+                <th className="text-left py-2 px-3">Rol</th>
+                <th className="text-center py-2 px-3">Activo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {equipo.map((u: any, i) => (
+                <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <td className="py-2 px-3">{u.nombre_completo}</td>
+                  <td className="py-2 px-3" style={{ color: MUTED }}>{u.email}</td>
+                  <td className="py-2 px-3">{rolBadge(u.rol)}</td>
+                  <td className="py-2 px-3 text-center">{activoBadge(!!u.activo)}</td>
+                </tr>
+              ))}
+              {equipo.length === 0 && (
+                <tr><td colSpan={4} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin usuarios</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </section>
+  );
+
   return (
     <div style={{ background: BG, minHeight: '100vh', color: TEXT, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }}>
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <header className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-3xl font-bold" style={{ color: TEXT }}>JugueteAR · Dashboard</h1>
-            <p style={{ color: MUTED }} className="text-sm mt-1">Panel interno de control</p>
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-12">
+        {/* HERO */}
+        <header className="space-y-6">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight" style={{ color: TEXT }}>
+                JugueteAR · Dashboard Comercial
+              </h1>
+              <p style={{ color: MUTED }} className="text-sm mt-2">
+                Panel de control en tiempo real · Análisis de ventas, productos y pricing
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {dashboardUser?.nombre_completo && (
+                <div className="text-sm px-3 py-1.5 rounded-full"
+                     style={{ background: CARD, border: `1px solid ${BORDER}`, color: TEXT }}>
+                  {dashboardUser.nombre_completo}
+                </div>
+              )}
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.href = '/login';
+                }}
+                className="text-sm px-3 py-1.5 rounded-md font-medium transition-opacity hover:opacity-90"
+                style={{ background: BLUE, color: '#fff' }}
+              >
+                Cerrar sesión
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {dashboardUser?.nombre_completo && (
-              <div className="text-sm px-3 py-1.5 rounded-full"
-                   style={{ background: CARD, border: `1px solid ${BORDER}`, color: TEXT }}>
-                {dashboardUser.nombre_completo}
-              </div>
-            )}
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                window.location.href = '/login';
-              }}
-              className="text-sm px-3 py-1.5 rounded-md font-medium transition-opacity hover:opacity-90"
-              style={{ background: BLUE, color: '#fff' }}
-            >
-              Cerrar sesión
-            </button>
+
+          {/* Hero stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+              <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>📅 Cotizaciones del mes</div>
+              <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>{heroStats.mes}</div>
+            </div>
+            <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+              <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>📈 Cotizaciones esta semana</div>
+              <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>{heroStats.semana}</div>
+            </div>
+            <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+              <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>💰 Total cotizado del mes</div>
+              <div className="text-2xl font-bold mt-2" style={{ color: BLUE }}>{formatARS(heroStats.totalMes)}</div>
+            </div>
           </div>
+
+          <div style={{ borderBottom: `1px solid ${BORDER}` }} />
         </header>
 
-        {/* SECTION 1 — KPIs */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <div className="text-sm" style={{ color: MUTED }}>📋 Total cotizaciones</div>
-            <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>
-              {kpis.total_cotizaciones ?? 0}
-            </div>
-          </Card>
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={openPendientes}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openPendientes(); }}
-            className="rounded-2xl border p-5 cursor-pointer transition hover:opacity-90"
-            style={{ background: CARD, borderColor: BORDER }}
-          >
-            <div className="text-sm flex items-center justify-between" style={{ color: MUTED }}>
-              <span>⏳ Pendientes</span>
-              <span className="text-[10px] uppercase tracking-wide" style={{ color: MUTED }}>ver detalle →</span>
-            </div>
-            <div
-              className="text-3xl font-bold mt-2"
-              style={{ color: pendientesAlta ? YELLOW : TEXT }}
-            >
-              {kpis.cotizaciones_pendientes ?? 0}
-            </div>
-          </div>
-          <Card>
-            <div className="text-sm" style={{ color: MUTED }}>💰 Valor total cotizado</div>
-            <div className="text-2xl font-bold mt-2" style={{ color: BLUE }}>
-              {formatARS(kpis.valor_total_cotizado || 0)}
-            </div>
-          </Card>
-          <Card>
-            <div className="text-sm" style={{ color: MUTED }}>⚡ Tiempo respuesta promedio</div>
-            <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>
-              {formatTiempoRespuesta(kpis.tiempo_respuesta_promedio_minutos ?? kpis.tiempo_respuesta_promedio)}
-            </div>
-          </Card>
-        </section>
+        {/* 📊 RESUMEN EJECUTIVO */}
+        <SectionHeader emoji="📊" title="RESUMEN EJECUTIVO" question="¿Cómo estamos?" />
+        {sectionKPIs}
 
-        {/* Evolución del ticket promedio */}
-        <section>
-          <Card>
-            <SectionTitle>Evolución del ticket promedio</SectionTitle>
-            {errors.ticketPromedio ? (
-              <ErrorMsg />
-            ) : (
-              <div style={{ width: '100%', height: 320 }}>
-                <ResponsiveContainer>
-                  <LineChart data={ticketPromedio} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
-                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
-                    <XAxis dataKey="mes_label" stroke={MUTED} />
-                    <YAxis
-                      stroke={MUTED}
-                      tickFormatter={(v: number) =>
-                        `$ ${Number(v || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
-                      }
-                      width={100}
-                    />
-                    <Tooltip
-                      contentStyle={tooltipStyle}
-                      cursor={{ stroke: BORDER }}
-                      labelFormatter={(label: any) => String(label)}
-                      formatter={(value: any, name: any, item: any) => {
-                        if (name === 'ticket_promedio') return [formatARS(Number(value)), 'Ticket promedio'];
-                        return [value, name];
-                      }}
-                      content={({ active, payload, label }: any) => {
-                        if (!active || !payload || !payload.length) return null;
-                        const p = payload[0].payload;
-                        return (
-                          <div style={{ ...tooltipStyle, padding: '8px 12px' }}>
-                            <div style={{ color: TEXT, fontWeight: 600, marginBottom: 4 }}>{label}</div>
-                            <div style={{ color: '#22c55e', fontSize: 13 }}>
-                              Ticket promedio: {formatARS(p.ticket_promedio)}
-                            </div>
-                            <div style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
-                              Cotizaciones: {p.cantidad_cotizaciones}
-                            </div>
-                          </div>
-                        );
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="ticket_promedio"
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      dot={{ r: 4, fill: '#22c55e', stroke: '#22c55e' }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </Card>
-        </section>
+        {/* 📈 ACTIVIDAD COMERCIAL */}
+        <SectionHeader emoji="📈" title="ACTIVIDAD COMERCIAL" question="¿Cómo va la actividad?" />
+        {sectionCotizacionesDia}
+        {sectionCanal}
+        {sectionTicket}
 
-        {/* SECTION 2 + 3 */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card>
-            <SectionTitle>Cotizaciones por canal</SectionTitle>
-            {errors.canales ? (
-              <ErrorMsg />
-            ) : (
-              <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
-                  <BarChart data={canales} margin={{ top: 24, right: 16, left: 0, bottom: 8 }}>
-                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
-                    <XAxis dataKey="name" stroke={MUTED} />
-                    <YAxis stroke={MUTED} allowDecimals={false} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} formatter={(v: any) => [v, 'Cantidad']} />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: TEXT, fontSize: 12, fontWeight: 700 }}>
-                      {canales.map((c, i) => (
-                        <Cell key={i} fill={c.name?.toLowerCase() === 'web' ? BLUE : c.name?.toLowerCase() === 'chatbot' ? YELLOW : '#64748b'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </Card>
+        {/* 🛒 PRODUCTOS MÁS COTIZADOS */}
+        <SectionHeader emoji="🛒" title="PRODUCTOS MÁS COTIZADOS" question="¿Qué se vende?" />
+        {sectionRanking}
 
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <SectionTitle>Histórico de precios</SectionTitle>
-              {errors.historico && <ErrorMsg />}
-              <button
-                onClick={exportHistorico}
-                disabled={!selectedProducto || historico.length === 0}
-                style={{ ...exportBtnStyle, opacity: !selectedProducto || historico.length === 0 ? 0.5 : 1 }}
-              >
-                ↓ Exportar CSV
-              </button>
-            </div>
-            <div className="mb-4 flex items-center gap-3 flex-wrap">
-              <div className="relative" style={{ minWidth: 280 }}>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setShowResults(true); }}
-                  onFocus={() => setShowResults(true)}
-                  onBlur={() => setTimeout(() => setShowResults(false), 150)}
-                  placeholder={selectedProducto?.nombre || 'Buscar por nombre o código...'}
-                  className="w-full px-3 py-2 rounded-lg text-sm"
-                  style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
-                />
-                {showResults && filteredProductos.length > 0 && (
-                  <ul
-                    className="absolute z-10 mt-1 w-full max-h-64 overflow-auto rounded-lg text-sm"
-                    style={{ background: CARD, border: `1px solid ${BORDER}` }}
-                  >
-                    {filteredProductos.map((p) => (
-                      <li
-                        key={p.id}
-                        onMouseDown={() => {
-                          setSelectedProducto(p);
-                          setSearch('');
-                          setShowResults(false);
-                        }}
-                        className="px-3 py-2 cursor-pointer hover:opacity-80"
-                        style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}
-                      >
-                        <div className="text-sm font-medium">{p.nombre}</div>
-                        {p.sku && (
-                          <div className="text-[11px]" style={{ color: MUTED }}>
-                            SKU: {p.sku}
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              {margenActual != null && (
-                <Badge color="#0f172a" bg={YELLOW}>
-                  Margen actual: {Number(margenActual).toFixed(2)}%
-                </Badge>
-              )}
-              {stockBadge()}
-            </div>
-            <div style={{ width: '100%', height: 260 }}>
-              <ResponsiveContainer>
-                <LineChart data={historico}>
-                  <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
-                  <XAxis dataKey="fecha_label" stroke={MUTED} tick={{ fontSize: 11 }} />
-                  <YAxis stroke={MUTED} tick={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={tooltipStyle} labelFormatter={(l) => String(l)} />
-                  <Legend wrapperStyle={{ color: TEXT }} />
-                  <Line type="monotone" dataKey="precio_publico" stroke={BLUE} strokeWidth={2} dot={{ r: 3, fill: BLUE, stroke: BLUE }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Precio público" />
-                  <Line type="monotone" dataKey="precio_proveedor" stroke={YELLOW} strokeWidth={2} dot={{ r: 3, fill: YELLOW, stroke: YELLOW }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Precio proveedor" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </section>
+        {/* 🎯 INTELIGENCIA DE MARKETING */}
+        <SectionHeader emoji="🎯" title="INTELIGENCIA DE MARKETING" question="¿A quién y qué le gusta?" />
+        {sectionCategorias}
+        {sectionClientes}
 
-        {/* SECTION 2.5 — Cotizaciones por día */}
-        <section>
-          <Card>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                <SectionTitle>Cotizaciones por día</SectionTitle>
-                {errors.cotizaciones && <ErrorMsg />}
-              <div className="flex flex-wrap gap-2">
-                {([
-                  { k: 'bar', label: 'Barras' },
-                  { k: 'line', label: 'Línea' },
-                ] as const).map((b) => {
-                  const active = cotChartType === b.k;
-                  return (
-                    <button
-                      key={b.k}
-                      onClick={() => setCotChartType(b.k)}
-                      className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
-                      style={{
-                        background: active ? BLUE : BG,
-                        color: active ? '#fff' : TEXT,
-                        border: `1px solid ${active ? BLUE : BORDER}`,
-                      }}
-                    >
-                      {b.label}
-                    </button>
-                  );
-                })}
-                <span className="mx-1" style={{ color: BORDER }}>|</span>
-                {([
-                  { k: '7d', label: '7 días' },
-                  { k: '30d', label: '30 días' },
-                  { k: '3m', label: '3 meses' },
-                  { k: '1y', label: '1 año' },
-                ] as const).map((p) => {
-                  const active = cotPeriodo === p.k;
-                  return (
-                    <button
-                      key={p.k}
-                      onClick={() => setCotPeriodo(p.k)}
-                      className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
-                      style={{
-                        background: active ? BLUE : BG,
-                        color: active ? '#fff' : TEXT,
-                        border: `1px solid ${active ? BLUE : BORDER}`,
-                      }}
-                    >
-                      {p.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div style={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer>
-                {cotChartType === 'bar' ? (
-                  <BarChart data={cotizacionesData}>
-                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
-                    <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
-                    <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Bar dataKey="total" fill={BLUE} name="Cotizaciones" />
-                  </BarChart>
-                ) : (
-                  <LineChart data={cotizacionesData}>
-                    <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
-                    <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
-                    <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke={YELLOW}
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: YELLOW, stroke: YELLOW }}
-                      activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
-                      name="Cotizaciones"
-                    />
-                  </LineChart>
-                )}
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </section>
-
-        {/* SECTION 3.5 — Estado de stock */}
-        <section>
-          <Card>
-            
-            {(() => {
-              const getEstado = (s: number) => {
-                if (s === 0) return { key: 'sin', label: 'Sin stock', bg: '#ef4444', color: '#fff' };
-                if (s <= 10) return { key: 'critico', label: 'Stock crítico', bg: '#f97316', color: '#fff' };
-                if (s <= 50) return { key: 'bajo', label: 'Stock bajo', bg: YELLOW, color: '#0f172a' };
-                return { key: 'en', label: 'En stock', bg: '#16a34a', color: '#fff' };
-              };
-              const filtered = stockAll
-                .filter((p) => {
-                  if (stockSearch) {
-                    const q = stockSearch.toLowerCase();
-                    if (!p.nombre.toLowerCase().includes(q) && !(p.sku || '').toLowerCase().includes(q)) return false;
-                  }
-                  if (stockFilter === 'todos') return true;
-                  return getEstado(p.stock).key === stockFilter;
-                })
-                .sort((a, b) => a.stock - b.stock);
-              const filters: { key: typeof stockFilter; label: string }[] = [
-                { key: 'todos', label: 'Todos' },
-                { key: 'sin', label: 'Sin stock' },
-                { key: 'critico', label: 'Stock crítico' },
-                { key: 'bajo', label: 'Stock bajo' },
-                { key: 'en', label: 'En stock' },
-              ];
-              return (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
-                    <SectionTitle>Estado de stock</SectionTitle>
-                    {errors.stockAll && <ErrorMsg />}
-                    <button
-                      onClick={() => exportStock(filtered)}
-                      disabled={filtered.length === 0}
-                      style={{ ...exportBtnStyle, opacity: filtered.length === 0 ? 0.5 : 1 }}
-                    >
-                      ↓ Exportar CSV
-                    </button>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-                    <input
-                      type="text"
-                      placeholder="Buscar por nombre o SKU..."
-                      value={stockSearch}
-                      onChange={(e) => setStockSearch(e.target.value)}
-                      className="px-3 py-2 rounded-md text-sm w-full sm:w-72 outline-none"
-                      style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {filters.map((f) => {
-                        const active = stockFilter === f.key;
-                        return (
-                          <button
-                            key={f.key}
-                            onClick={() => setStockFilter(f.key)}
-                            className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
-                            style={{
-                              background: active ? BLUE : BG,
-                              color: active ? '#fff' : TEXT,
-                              border: `1px solid ${active ? BLUE : BORDER}`,
-                            }}
-                          >
-                            {f.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${BORDER}` }}>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr style={{ color: MUTED, background: BG, borderBottom: `1px solid ${BORDER}` }}>
-                          <th className="text-left py-2 px-3 font-medium">Producto</th>
-                          <th className="text-left py-2 px-3 font-medium">SKU</th>
-                          <th className="text-left py-2 px-3 font-medium">Proveedor</th>
-                          <th className="text-right py-2 px-3 font-medium">Stock</th>
-                          <th className="text-left py-2 px-3 font-medium">Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtered.map((p) => {
-                          const est = getEstado(p.stock);
-                          return (
-                            <tr key={p.id} style={{ borderBottom: `1px solid ${BORDER}`, color: TEXT }}>
-                              <td className="py-2 px-3">{p.nombre}</td>
-                              <td className="py-2 px-3" style={{ color: MUTED, fontSize: 11 }}>{p.sku || '—'}</td>
-                              <td className="py-2 px-3" style={{ color: MUTED }}>{p.proveedor}</td>
-                              <td className="py-2 px-3 text-right font-semibold">{p.stock}</td>
-                              <td className="py-2 px-3"><Badge color={est.color} bg={est.bg}>{est.label}</Badge></td>
-                            </tr>
-                          );
-                        })}
-                        {filtered.length === 0 && (
-                          <tr><td colSpan={5} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin resultados</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              );
-            })()}
-          </Card>
-        </section>
-        <section>
-          <Card>
-            <SectionTitle>Ranking de productos más cotizados</SectionTitle>
-            {errors.ranking && <ErrorMsg />}
-            <div style={{ width: '100%', height: Math.max(320, ranking.length * 36) }}>
-              <ResponsiveContainer>
-                <BarChart data={ranking} layout="vertical" margin={{ left: 40, right: 30 }}>
-                  <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
-                  <XAxis type="number" stroke={MUTED} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="nombre" stroke={MUTED} width={160} tick={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend wrapperStyle={{ color: TEXT }} />
-                  <Bar dataKey="veces_cotizado" fill={BLUE} name="Veces cotizado" />
-                  <Bar dataKey="total_unidades_cotizadas" fill={YELLOW} name="Unidades cotizadas" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </section>
-
-        {/* SECTION 5 — Clientes frecuentes */}
-        <section>
-          <Card>
-            <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
-              <SectionTitle>Clientes frecuentes</SectionTitle>
-              {errors.clientes && <ErrorMsg />}
-              <button
-                onClick={exportClientes}
-                disabled={clientes.length === 0}
-                style={{ ...exportBtnStyle, opacity: clientes.length === 0 ? 0.5 : 1 }}
-              >
-                ↓ Exportar CSV
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
-                    <th className="text-left py-2 px-3">Nombre</th>
-                    <th className="text-left py-2 px-3">Email</th>
-                    <th className="text-left py-2 px-3">Teléfono</th>
-                    <th className="text-left py-2 px-3">Categoría favorita</th>
-                    <th className="text-right py-2 px-3">Total cotizaciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clientes.map((c, i) => {
-                    const catColors: Record<string, { bg: string; color: string }> = {
-                      Didacticos: { bg: '#1565C0', color: '#fff' },
-                      Muñecas: { bg: '#9333ea', color: '#fff' },
-                      Accion: { bg: '#f97316', color: '#fff' },
-                      'Juegos de Mesa': { bg: '#16a34a', color: '#fff' },
-                      Bebes: { bg: '#ec4899', color: '#fff' },
-                      bebes: { bg: '#ec4899', color: '#fff' },
-                      Vehiculos: { bg: '#06b6d4', color: '#0f172a' },
-                    };
-                    const cat = c.categoria_favorita;
-                    const cc = cat ? catColors[cat] : null;
-                    return (
-                      <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                        <td className="py-2 px-3">{c.cliente_frecuente}</td>
-                        <td className="py-2 px-3" style={{ color: MUTED }}>{c.email ?? '—'}</td>
-                        <td className="py-2 px-3" style={{ color: MUTED }}>{c.telefono ?? '—'}</td>
-                        <td className="py-2 px-3">
-                          {cat ? (
-                            <Badge color={cc?.color ?? '#fff'} bg={cc?.bg ?? '#64748b'}>{cat}</Badge>
-                          ) : (
-                            <span style={{ color: MUTED }}>—</span>
-                          )}
-                        </td>
-                        <td className="py-2 px-3 text-right font-semibold">{c.total_cotizaciones_cliente}</td>
-                      </tr>
-                    );
-                  })}
-                  {clientes.length === 0 && (
-                    <tr><td colSpan={5} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin datos</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </section>
-
-        {/* SECTION 5b — Categorías más pedidas */}
-        <section>
-          <Card>
-            <SectionTitle>Categorías más pedidas</SectionTitle>
-            <p className="text-xs mb-4" style={{ color: MUTED }}>Útil para campañas de marketing</p>
-            {errors.categoriasPedidas && <ErrorMsg />}
-            <div style={{ width: '100%', height: Math.max(260, categoriasPedidas.length * 44) }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={categoriasPedidas}
-                  layout="vertical"
-                  margin={{ top: 8, right: 24, left: 24, bottom: 8 }}
-                >
-                  <CartesianGrid stroke={BORDER} strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" stroke={MUTED} tick={{ fill: MUTED, fontSize: 12 }} />
-                  <YAxis
-                    type="category"
-                    dataKey="categoria"
-                    stroke={MUTED}
-                    tick={{ fill: TEXT, fontSize: 12 }}
-                    width={140}
-                  />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-                  <Legend wrapperStyle={{ color: TEXT }} />
-                  <Bar dataKey="veces_pedida" fill={BLUE} name="Veces pedida" />
-                  <Bar dataKey="unidades_totales" fill={YELLOW} name="Unidades totales" />
-                </BarChart>
-              </ResponsiveContainer>
-              {categoriasPedidas.length === 0 && !errors.categoriasPedidas && (
-                <p className="py-4 text-center text-sm" style={{ color: MUTED }}>Sin datos</p>
-              )}
-            </div>
-          </Card>
-        </section>
-
-        {/* SECTION 6 — Reglas de negocio */}
-        <section>
-          <Card>
-            <SectionTitle>Reglas de negocio vigentes</SectionTitle>
-            {errors.reglas && <ErrorMsg />}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
-                    <th className="text-left py-2 px-3">Nombre</th>
-                    <th className="text-left py-2 px-3">Tipo</th>
-                    <th className="text-right py-2 px-3">Valor</th>
-                    <th className="text-left py-2 px-3">Descripción</th>
-                    <th className="text-left py-2 px-3">Vigente desde</th>
-                    <th className="text-center py-2 px-3">Activo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reglas.map((r: any, i) => {
-                    const tipoMap: Record<string, string> = {
-                      costo_fijo: 'Costo Fijo',
-                      costo_variable: 'Costo Variable',
-                      margen_ganancia: 'Margen de Ganancia',
-                    };
-                    const tipoLabel = tipoMap[r.tipo_regla] ?? (r.tipo_regla ?? '—');
-                    const valorNum = Number(r.valor);
-                    const valorLabel = isNaN(valorNum) ? '—' : `${Math.round(valorNum * 100)}%`;
-                    return (
-                      <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                        <td className="py-2 px-3">{r.nombre_regla}</td>
-                        <td className="py-2 px-3">{tipoLabel}</td>
-                        <td className="py-2 px-3 text-right">{valorLabel}</td>
-                        <td className="py-2 px-3 text-xs" style={{ color: MUTED }}>{r.descripcion ?? '—'}</td>
-                        <td className="py-2 px-3">{r.fecha_vigencia ? formatFechaCorta(r.fecha_vigencia) : '—'}</td>
-                        <td className="py-2 px-3 text-center">{activoBadge(!!r.activo)}</td>
-                      </tr>
-                    );
-                  })}
-                  {reglas.length === 0 && (
-                    <tr><td colSpan={6} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin reglas</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </section>
-
-        {/* SECTION 6.5 — Simulador de pricing */}
+        {/* 💰 ANÁLISIS DE PRICING */}
+        <SectionHeader emoji="💰" title="ANÁLISIS DE PRICING" question="¿A qué precio?" />
+        {sectionHistorico}
         <SimuladorPricing reglas={reglas} />
 
-        <section>
-          <Card>
-            <SectionTitle>Equipo con acceso al sistema</SectionTitle>
-            {errors.equipo && <ErrorMsg />}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>
-                    <th className="text-left py-2 px-3">Nombre</th>
-                    <th className="text-left py-2 px-3">Email</th>
-                    <th className="text-left py-2 px-3">Rol</th>
-                    <th className="text-center py-2 px-3">Activo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {equipo.map((u: any, i) => (
-                    <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <td className="py-2 px-3">{u.nombre_completo}</td>
-                      <td className="py-2 px-3" style={{ color: MUTED }}>{u.email}</td>
-                      <td className="py-2 px-3">{rolBadge(u.rol)}</td>
-                      <td className="py-2 px-3 text-center">{activoBadge(!!u.activo)}</td>
-                    </tr>
-                  ))}
-                  {equipo.length === 0 && (
-                    <tr><td colSpan={4} className="py-4 px-3 text-center" style={{ color: MUTED }}>Sin usuarios</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </section>
+        {/* 📦 STOCK E INVENTARIO */}
+        <SectionHeader emoji="📦" title="STOCK E INVENTARIO" question="¿Tenemos para vender?" />
+        {sectionStock}
 
+        {/* ⚙️ ADMINISTRACIÓN */}
+        <SectionHeader emoji="⚙️" title="ADMINISTRACIÓN" question="¿Quién maneja el sistema?" />
+        {sectionReglas}
+        {sectionEquipo}
 
         {/* Modal Pendientes */}
         {showPendientes && (
