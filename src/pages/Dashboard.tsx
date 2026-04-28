@@ -837,15 +837,15 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
       return 1 + Math.round((diff - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
     };
 
-    const buckets = new Map<string, { label: string; sortKey: number; total: number }>();
+    const buckets = new Map<string, { label: string; sortKey: number; total: number; monto: number }>();
     const parseLocal = (iso: string): Date => {
       // Soporta 'YYYY-MM-DD' y 'YYYY-MM-DDTHH:mm:ss...' interpretándolos en zona local
       const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
       if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
       return new Date(iso);
     };
-    for (const iso of cotizacionesFechas) {
-      const d = parseLocal(iso);
+    for (const r of cotizacionesRows) {
+      const d = parseLocal(r.fecha);
       if (isNaN(d.getTime()) || d < from) continue;
       let key = '', label = '', sortKey = 0;
       if (groupBy === 'day') {
@@ -863,11 +863,11 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
         sortKey = d.getFullYear() * 12 + d.getMonth();
       }
       const cur = buckets.get(key);
-      if (cur) cur.total += 1;
-      else buckets.set(key, { label, sortKey, total: 1 });
+      if (cur) { cur.total += 1; cur.monto += r.total; }
+      else buckets.set(key, { label, sortKey, total: 1, monto: r.total });
     }
     return Array.from(buckets.values()).sort((a, b) => a.sortKey - b.sortKey);
-  }, [cotizacionesFechas, cotPeriodo]);
+  }, [cotizacionesRows, cotPeriodo]);
 
   const estadoStockLabel = (s: number) => {
     if (s === 0) return 'Sin stock';
@@ -1095,24 +1095,70 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
               <BarChart data={cotizacionesData}>
                 <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
                 <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
-                <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="total" fill={BLUE} name="Cotizaciones" />
+                <YAxis yAxisId="left" stroke={BLUE} tick={{ fontSize: 11 }} allowDecimals={false} />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke={YELLOW}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v) => {
+                    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+                    if (v >= 1_000) return `$${Math.round(v / 1_000)}k`;
+                    return `$${v}`;
+                  }}
+                />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  formatter={(value: any, name: any) =>
+                    name === 'Monto cotizado' ? formatARS(Number(value)) : value
+                  }
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar yAxisId="left" dataKey="total" fill={BLUE} name="Cotizaciones" />
+                <Bar yAxisId="right" dataKey="monto" fill={YELLOW} name="Monto cotizado" />
               </BarChart>
             ) : (
               <LineChart data={cotizacionesData}>
                 <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
                 <XAxis dataKey="label" stroke={MUTED} tick={{ fontSize: 11 }} />
-                <YAxis stroke={MUTED} tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <YAxis yAxisId="left" stroke={BLUE} tick={{ fontSize: 11 }} allowDecimals={false} />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke={YELLOW}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v) => {
+                    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+                    if (v >= 1_000) return `$${Math.round(v / 1_000)}k`;
+                    return `$${v}`;
+                  }}
+                />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  formatter={(value: any, name: any) =>
+                    name === 'Monto cotizado' ? formatARS(Number(value)) : value
+                  }
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Line
+                  yAxisId="left"
                   type="monotone"
                   dataKey="total"
+                  stroke={BLUE}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: BLUE, stroke: BLUE }}
+                  activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                  name="Cotizaciones"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="monto"
                   stroke={YELLOW}
                   strokeWidth={2}
                   dot={{ r: 3, fill: YELLOW, stroke: YELLOW }}
                   activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
-                  name="Cotizaciones"
+                  name="Monto cotizado"
                 />
               </LineChart>
             )}
