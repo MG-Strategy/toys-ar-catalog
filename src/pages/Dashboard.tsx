@@ -486,12 +486,14 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     (async () => {
       const { data, error } = await supabase
         .from('cotizaciones_globales')
-        .select('fecha_cotizacion');
+        .select('fecha_cotizacion, total_ars');
       if (error) { setErr('cotizaciones', true); return; }
       if (data) {
-        setCotizacionesFechas(
-          (data as any[]).map((r) => r.fecha_cotizacion).filter(Boolean)
-        );
+        const rows = (data as any[])
+          .filter((r) => r.fecha_cotizacion)
+          .map((r) => ({ fecha: r.fecha_cotizacion as string, total: Number(r.total_ars || 0) }));
+        setCotizacionesRows(rows);
+        setCotizacionesFechas(rows.map((r) => r.fecha));
       }
     })();
   }, []);
