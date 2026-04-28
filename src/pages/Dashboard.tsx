@@ -57,6 +57,16 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-lg font-semibold mb-4" style={{ color: TEXT }}>{children}</h2>
 );
 
+const SectionHeader = ({ emoji, title, question }: { emoji: string; title: string; question: string }) => (
+  <div className="pt-4 border-t" style={{ borderColor: BORDER }}>
+    <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: TEXT }}>
+      <span>{emoji}</span>
+      <span>{title}</span>
+    </h2>
+    <p className="text-sm mt-1" style={{ color: MUTED }}>{question}</p>
+  </div>
+);
+
 const ErrorMsg = () => (
   <p className="text-center py-6 text-sm" style={{ color: '#f97316' }}>
     ⚠️ Error al cargar los datos. Intentá recargar.
