@@ -1786,37 +1786,39 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
           <div style={{ borderBottom: `1px solid ${BORDER}` }} />
         </header>
 
+         <SectionNav />
+
         {/* 📊 RESUMEN EJECUTIVO */}
-        <SectionHeader emoji="📊" title="RESUMEN EJECUTIVO" question="¿Cómo estamos?" />
+        <SectionHeader id="sec-resumen" emoji="📊" title="RESUMEN EJECUTIVO" question="¿Cómo estamos?" />
         {sectionKPIs}
 
         {/* 📈 ACTIVIDAD COMERCIAL */}
-        <SectionHeader emoji="📈" title="ACTIVIDAD COMERCIAL" question="¿Cómo va la actividad?" />
+        <SectionHeader id="sec-actividad" emoji="📈" title="ACTIVIDAD COMERCIAL" question="¿Cómo va la actividad?" />
         {sectionCotizacionesDia}
         {sectionDiaSemana}
         {sectionCanal}
         {sectionTicket}
 
         {/* 🛒 PRODUCTOS MÁS COTIZADOS */}
-        <SectionHeader emoji="🛒" title="PRODUCTOS MÁS COTIZADOS" question="¿Qué se vende?" />
+        <SectionHeader id="sec-productos" emoji="🛒" title="PRODUCTOS MÁS COTIZADOS" question="¿Qué se vende?" />
         {sectionRanking}
 
         {/* 🎯 INTELIGENCIA DE MARKETING */}
-        <SectionHeader emoji="🎯" title="INTELIGENCIA DE MARKETING" question="¿A quién y qué le gusta?" />
+        <SectionHeader id="sec-marketing" emoji="🎯" title="INTELIGENCIA DE MARKETING" question="¿A quién y qué le gusta?" />
         {sectionCategorias}
         {sectionClientes}
 
         {/* 💰 ANÁLISIS DE PRICING */}
-        <SectionHeader emoji="💰" title="ANÁLISIS DE PRICING" question="¿A qué precio?" />
+        <SectionHeader id="sec-pricing" emoji="💰" title="ANÁLISIS DE PRICING" question="¿A qué precio?" />
         {sectionHistorico}
         <SimuladorPricing reglas={reglas} />
 
         {/* 📦 STOCK E INVENTARIO */}
-        <SectionHeader emoji="📦" title="STOCK E INVENTARIO" question="¿Tenemos para vender?" />
+        <SectionHeader id="sec-stock" emoji="📦" title="STOCK E INVENTARIO" question="¿Tenemos para vender?" />
         {sectionStock}
 
         {/* ⚙️ ADMINISTRACIÓN */}
-        <SectionHeader emoji="⚙️" title="ADMINISTRACIÓN" question="¿Quién maneja el sistema?" />
+        <SectionHeader id="sec-admin" emoji="⚙️" title="ADMINISTRACIÓN" question="¿Quién maneja el sistema?" />
         {sectionReglas}
         {sectionEquipo}
 
