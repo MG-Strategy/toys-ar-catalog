@@ -927,6 +927,23 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     );
   };
 
+  // Hero stats: month / week / total month
+  const heroStats = useMemo(() => {
+    const now = new Date();
+    const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startWeek = new Date(now);
+    startWeek.setDate(now.getDate() - 6);
+    startWeek.setHours(0, 0, 0, 0);
+    let mes = 0, semana = 0, totalMes = 0;
+    for (const r of cotizacionesRows) {
+      const d = new Date(r.fecha);
+      if (isNaN(d.getTime())) continue;
+      if (d >= startMonth) { mes += 1; totalMes += r.total; }
+      if (d >= startWeek) semana += 1;
+    }
+    return { mes, semana, totalMes };
+  }, [cotizacionesRows]);
+
   return (
     <div style={{ background: BG, minHeight: '100vh', color: TEXT, fontFamily: 'Inter, Poppins, system-ui, sans-serif' }}>
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
