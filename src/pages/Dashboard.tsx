@@ -945,14 +945,17 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
       if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
       return new Date(iso);
     };
-    let mes = 0, semana = 0, totalMes = 0;
+    let mes = 0, semana = 0, historico = 0;
+    let totalMes = 0, totalSemana = 0, totalHistorico = 0;
     for (const r of cotizacionesRows) {
       const d = parseLocal(r.fecha);
       if (isNaN(d.getTime())) continue;
+      historico += 1;
+      totalHistorico += r.total;
       if (d >= startMonth) { mes += 1; totalMes += r.total; }
-      if (d >= startWeek) semana += 1;
+      if (d >= startWeek) { semana += 1; totalSemana += r.total; }
     }
-    return { mes, semana, totalMes };
+    return { mes, semana, historico, totalMes, totalSemana, totalHistorico };
   }, [cotizacionesRows]);
 
   // Ticket promedio SEMANAL — calculado desde cotizacionesRows
@@ -1632,14 +1635,17 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
             <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
               <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>📅 Cotizaciones del mes</div>
               <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>{heroStats.mes}</div>
+              <div className="text-sm font-semibold mt-1" style={{ color: BLUE }}>{formatARS(heroStats.totalMes)}</div>
             </div>
             <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
               <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>📈 Cotizaciones esta semana</div>
               <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>{heroStats.semana}</div>
+              <div className="text-sm font-semibold mt-1" style={{ color: BLUE }}>{formatARS(heroStats.totalSemana)}</div>
             </div>
             <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
-              <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>💰 Total cotizado del mes</div>
-              <div className="text-2xl font-bold mt-2" style={{ color: BLUE }}>{formatARS(heroStats.totalMes)}</div>
+              <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>💰 Histórico cotizado</div>
+              <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>{heroStats.historico}</div>
+              <div className="text-sm font-semibold mt-1" style={{ color: BLUE }}>{formatARS(heroStats.totalHistorico)}</div>
             </div>
           </div>
 
