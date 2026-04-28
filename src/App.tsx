@@ -9,24 +9,36 @@ import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
 import Cotizar from "./pages/Cotizar";
 import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import DashboardAuthGuard from "./components/DashboardAuthGuard";
 
 const queryClient = new QueryClient();
 
 const Shell = () => {
   const { pathname } = useLocation();
   const isDashboard = pathname.startsWith("/dashboard");
+  const isLogin = pathname.startsWith("/login");
+  const hideChrome = isDashboard || isLogin;
   return (
     <>
-      {!isDashboard && <Header />}
+      {!hideChrome && <Header />}
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/cotizar" element={<Cotizar />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardAuthGuard>
+              {({ user }) => <Dashboard dashboardUser={user} />}
+            </DashboardAuthGuard>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {!isDashboard && <FloatingChatButton />}
+      {!hideChrome && <FloatingChatButton />}
     </>
   );
 };
