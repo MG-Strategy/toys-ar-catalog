@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const BG = '#0f172a';
@@ -13,6 +14,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -84,15 +86,26 @@ const Login = () => {
           </div>
           <div>
             <label className="block text-sm mb-1" style={{ color: MUTED }}>Contraseña</label>
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md px-3 py-2 outline-none"
-              style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-md px-3 py-2 pr-10 outline-none"
+                style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:opacity-80"
+                style={{ color: MUTED, background: 'transparent' }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           {error && (
             <div className="text-sm rounded-md px-3 py-2"
