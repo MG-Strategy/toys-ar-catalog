@@ -838,8 +838,14 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     };
 
     const buckets = new Map<string, { label: string; sortKey: number; total: number }>();
+    const parseLocal = (iso: string): Date => {
+      // Soporta 'YYYY-MM-DD' y 'YYYY-MM-DDTHH:mm:ss...' interpretándolos en zona local
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return new Date(iso);
+    };
     for (const iso of cotizacionesFechas) {
-      const d = new Date(iso);
+      const d = parseLocal(iso);
       if (isNaN(d.getTime()) || d < from) continue;
       let key = '', label = '', sortKey = 0;
       if (groupBy === 'day') {
@@ -1550,13 +1556,16 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
         {/* HERO */}
         <header className="space-y-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight" style={{ color: TEXT }}>
-                JugueteAR · Dashboard Comercial
-              </h1>
-              <p style={{ color: MUTED }} className="text-sm mt-2">
-                Panel de control en tiempo real · Análisis de ventas, productos y pricing
-              </p>
+            <div className="flex items-center gap-4">
+              <span className="text-5xl leading-none" aria-hidden="true">🧸</span>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight" style={{ color: TEXT }}>
+                  JugueteAR · Dashboard Comercial
+                </h1>
+                <p style={{ color: MUTED }} className="text-sm mt-2">
+                  Panel de control en tiempo real · Análisis de ventas, productos y pricing
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               {dashboardUser?.nombre_completo && (
