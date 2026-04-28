@@ -57,8 +57,8 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-lg font-semibold mb-4" style={{ color: TEXT }}>{children}</h2>
 );
 
-const SectionHeader = ({ emoji, title, question }: { emoji: string; title: string; question: string }) => (
-  <div className="pt-4 border-t" style={{ borderColor: BORDER }}>
+const SectionHeader = ({ id, emoji, title, question }: { id?: string; emoji: string; title: string; question: string }) => (
+  <div id={id} className="pt-4 border-t scroll-mt-24" style={{ borderColor: BORDER }}>
     <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: TEXT }}>
       <span>{emoji}</span>
       <span>{title}</span>
@@ -66,6 +66,41 @@ const SectionHeader = ({ emoji, title, question }: { emoji: string; title: strin
     <p className="text-sm mt-1" style={{ color: MUTED }}>{question}</p>
   </div>
 );
+
+const SectionNav = () => {
+  const items = [
+    { id: 'sec-resumen', label: '📊 Resumen' },
+    { id: 'sec-actividad', label: '📈 Actividad' },
+    { id: 'sec-productos', label: '🛒 Productos' },
+    { id: 'sec-marketing', label: '🎯 Marketing' },
+    { id: 'sec-pricing', label: '💰 Pricing' },
+    { id: 'sec-stock', label: '📦 Stock' },
+    { id: 'sec-admin', label: '⚙️ Administración' },
+  ];
+  const go = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  return (
+    <nav
+      className="sticky top-0 z-40 -mx-4 px-4 py-2 mb-4 backdrop-blur"
+      style={{ background: 'rgba(15,23,42,0.85)', borderBottom: `1px solid ${BORDER}` }}
+    >
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        {items.map((it) => (
+          <button
+            key={it.id}
+            onClick={() => go(it.id)}
+            className="whitespace-nowrap text-xs sm:text-sm px-3 py-1.5 rounded-full transition-colors hover:opacity-90"
+            style={{ background: '#1e293b', color: TEXT, border: `1px solid ${BORDER}` }}
+          >
+            {it.label}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+};
 
 const ErrorMsg = () => (
   <p className="text-center py-6 text-sm" style={{ color: '#f97316' }}>
