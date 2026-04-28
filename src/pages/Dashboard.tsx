@@ -1635,14 +1635,17 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
             <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
               <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>📅 Cotizaciones del mes</div>
               <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>{heroStats.mes}</div>
+              <div className="text-sm font-semibold mt-1" style={{ color: BLUE }}>{formatARS(heroStats.totalMes)}</div>
             </div>
             <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
               <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>📈 Cotizaciones esta semana</div>
               <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>{heroStats.semana}</div>
+              <div className="text-sm font-semibold mt-1" style={{ color: BLUE }}>{formatARS(heroStats.totalSemana)}</div>
             </div>
             <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
-              <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>💰 Total cotizado del mes</div>
-              <div className="text-2xl font-bold mt-2" style={{ color: BLUE }}>{formatARS(heroStats.totalMes)}</div>
+              <div className="text-xs uppercase tracking-wide" style={{ color: MUTED }}>💰 Histórico cotizado</div>
+              <div className="text-3xl font-bold mt-2" style={{ color: TEXT }}>{heroStats.historico}</div>
+              <div className="text-sm font-semibold mt-1" style={{ color: BLUE }}>{formatARS(heroStats.totalHistorico)}</div>
             </div>
           </div>
 
