@@ -940,14 +940,54 @@ const Dashboard = ({ dashboardUser }: { dashboardUser?: DashboardUser } = {}) =>
     const startWeek = new Date(now);
     startWeek.setDate(now.getDate() - 6);
     startWeek.setHours(0, 0, 0, 0);
+    const parseLocal = (iso: string): Date => {
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return new Date(iso);
+    };
     let mes = 0, semana = 0, totalMes = 0;
     for (const r of cotizacionesRows) {
-      const d = new Date(r.fecha);
+      const d = parseLocal(r.fecha);
       if (isNaN(d.getTime())) continue;
       if (d >= startMonth) { mes += 1; totalMes += r.total; }
       if (d >= startWeek) semana += 1;
     }
     return { mes, semana, totalMes };
+  }, [cotizacionesRows]);
+
+  // Ticket promedio SEMANAL — calculado desde cotizacionesRows
+  const ticketPromedioSemanal = useMemo(() => {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const parseLocal = (iso: string): Date => {
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return new Date(iso);
+    };
+    // Inicio de semana = lunes local
+    const startOfWeek = (d: Date): Date => {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dow = (x.getDay() + 6) % 7; // 0 = lunes
+      x.setDate(x.getDate() - dow);
+      return x;
+    };
+    const buckets = new Map<string, { sortKey: number; mes_label: string; suma: number; cantidad: number }>();
+    for (const r of cotizacionesRows) {
+      const d = parseLocal(r.fecha);
+      if (isNaN(d.getTime())) continue;
+      const ws = startOfWeek(d);
+      const key = `${ws.getFullYear()}-${ws.getMonth()}-${ws.getDate()}`;
+      const label = `${ws.getDate()} ${meses[ws.getMonth()]}`;
+      const cur = buckets.get(key);
+      if (cur) { cur.suma += r.total; cur.cantidad += 1; }
+      else buckets.set(key, { sortKey: ws.getTime(), mes_label: label, suma: r.total, cantidad: 1 });
+    }
+    return Array.from(buckets.values())
+      .sort((a, b) => a.sortKey - b.sortKey)
+      .map((b) => ({
+        mes_label: b.mes_label,
+        ticket_promedio: b.cantidad > 0 ? b.suma / b.cantidad : 0,
+        cantidad_cotizaciones: b.cantidad,
+      }));
   }, [cotizacionesRows]);
 
   // ============ Section JSX blocks (defined here, rendered in order below) ============
