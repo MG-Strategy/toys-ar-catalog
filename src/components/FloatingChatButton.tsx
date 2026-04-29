@@ -4,7 +4,7 @@ import { MessageCircle, X, Send } from "lucide-react";
 const CONFIG = {
   WEBHOOK_URL: "https://g4bn4t-n8n.duckdns.org/webhook/3dfef37d-d21b-4eec-af3d-1a79f1c26dc8",
   GREETING:
-    "¡Hola! 👋 Soy el asistente de JugueteAR.\n¿En qué te puedo ayudar? Podés preguntarme sobre juguetes, precios o pedir una cotización.\nSi ya interactuaste con nosotros 🧾, puedes indicarme tu email 📧​.",
+    "¡Hola! 👋 Soy el asistente de JugueteAR.\n¿En qué te puedo ayudar? Podés preguntarme sobre juguetes, precios o pedir una cotización.\nSi ya interactuaste con nosotros 🧾, puedes indicarme tu email 📧​. para comenzar 😎​.",
 };
 
 const genId = () => "sid_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
