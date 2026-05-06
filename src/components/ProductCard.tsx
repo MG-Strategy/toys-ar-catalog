@@ -76,7 +76,7 @@ const ProductCard = ({ product }: { product: Product }) => {
           </span>
         </div>
         {product.sku && (
-          <p className="text-muted-foreground/70" style={{ fontSize: '11px' }}>SKU: {product.sku}</p>
+          <p className="text-foreground/80 font-semibold" style={{ fontSize: '11px' }}>SKU: {product.sku}</p>
         )}
         {product.descripcion && (
           <p className="text-xs text-muted-foreground line-clamp-2">{product.descripcion}</p>
